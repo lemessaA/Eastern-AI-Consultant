@@ -3,6 +3,15 @@
 Documents (PDF / DOCX / TXT / CSV) are parsed → split → embedded → stored.
 The :class:`RAGService` exposes high-level helpers used by both the chat
 endpoint and the business analysis workflow.
+
+Embedding backend selection (lightest first):
+
+1. **OpenAI** ``text-embedding-3-small`` — used automatically when
+   ``OPENAI_API_KEY`` is set. No local model download, ~$0.02 / 1M tokens.
+2. **ChromaDB default ONNX** — bundled with ``chromadb`` (~80 MB).
+   Activates if no key is set and ``sentence-transformers`` is not installed.
+3. **HuggingFace local** — only if you installed the ``local-embed`` extra
+   (``uv sync --extra local-embed``). Best quality but pulls ~2 GB of PyTorch.
 """
 
 from __future__ import annotations
@@ -11,9 +20,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import settings
@@ -29,11 +38,47 @@ class RetrievedChunk:
     metadata: dict[str, Any]
 
 
+def _build_embeddings() -> Embeddings | None:
+    """Pick the best available embedding backend at startup."""
+
+    # 1. OpenAI — cheapest, no local install.
+    if settings.OPENAI_API_KEY:
+        try:
+            from langchain_openai import OpenAIEmbeddings
+
+            logger.info("rag_embeddings_backend", backend="openai")
+            return OpenAIEmbeddings(
+                model="text-embedding-3-small",
+                api_key=settings.OPENAI_API_KEY,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("openai_embeddings_failed", error=str(exc))
+
+    # 2. Local HuggingFace via sentence-transformers (optional extra).
+    try:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+
+        logger.info("rag_embeddings_backend", backend="huggingface")
+        return HuggingFaceEmbeddings(
+            model_name=settings.EMBEDDING_MODEL,
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True},
+        )
+    except ImportError:
+        # 3. Fall back to Chroma's bundled ONNX default — no extra install.
+        logger.info(
+            "rag_embeddings_backend",
+            backend="chroma-default",
+            note="Install `[local-embed]` extra or set OPENAI_API_KEY for better quality.",
+        )
+        return None
+
+
 class RAGService:
     """Thin wrapper around a persistent Chroma vector store."""
 
     def __init__(self) -> None:
-        self._embeddings: HuggingFaceEmbeddings | None = None
+        self._embeddings: Embeddings | None | bool = False  # tri-state: unset
         self._store: Chroma | None = None
         self._splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
@@ -44,14 +89,10 @@ class RAGService:
 
     # ------- Lazy initialisation -----------------------------------------
     @property
-    def embeddings(self) -> HuggingFaceEmbeddings:
-        if self._embeddings is None:
-            self._embeddings = HuggingFaceEmbeddings(
-                model_name=settings.EMBEDDING_MODEL,
-                model_kwargs={"device": "cpu"},
-                encode_kwargs={"normalize_embeddings": True},
-            )
-        return self._embeddings
+    def embeddings(self) -> Embeddings | None:
+        if self._embeddings is False:
+            self._embeddings = _build_embeddings()
+        return self._embeddings  # type: ignore[return-value]
 
     @property
     def store(self) -> Chroma:
