@@ -45,7 +45,7 @@ services:
 
   api:
     build:
-      context: ./apps/api
+      context: ./backend
       dockerfile: Dockerfile
     container_name: eai-api
     restart: unless-stopped
@@ -76,7 +76,7 @@ services:
 
   worker:
     build:
-      context: ./apps/api
+      context: ./backend
       dockerfile: Dockerfile
     container_name: eai-worker
     restart: unless-stopped

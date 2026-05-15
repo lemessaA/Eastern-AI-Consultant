@@ -11,6 +11,7 @@ venv
 .ruff_cache
 chroma_db
 uploads
-README.md
 Dockerfile
 .dockerignore
+# README.md is intentionally NOT excluded — pyproject.toml references it
+# via `readme = "README.md"`, so it must be present at build time.
