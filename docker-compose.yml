@@ -1,0 +1,139 @@
+version: "3.9"
+
+# =============================================================================
+# Eastern AI Consultant — Full-stack local & production docker-compose
+# Services: postgres (pgvector), redis, api (FastAPI), worker (Celery),
+#           web (Next.js), nginx (reverse proxy)
+# =============================================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: eai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-eastern_ai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eastern_ai}
+      POSTGRES_DB: ${POSTGRES_DB:-eastern_ai}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eastern_ai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eai-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: eai-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eai-network
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: eai-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-eastern_ai}:${POSTGRES_PASSWORD:-eastern_ai}@postgres:5432/${POSTGRES_DB:-eastern_ai}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${API_SECRET_KEY}
+      JWT_SECRET: ${API_JWT_SECRET}
+      CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:3000}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      ENVIRONMENT: production
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - api_uploads:/app/uploads
+      - chroma_data:/app/chroma_db
+    networks:
+      - eai-network
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: eai-worker
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-eastern_ai}:${POSTGRES_PASSWORD:-eastern_ai}@postgres:5432/${POSTGRES_DB:-eastern_ai}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${API_SECRET_KEY}
+      JWT_SECRET: ${API_JWT_SECRET}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - api_uploads:/app/uploads
+    networks:
+      - eai-network
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    container_name: eai-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      - api
+    networks:
+      - eai-network
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: eai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - eai-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_uploads:
+  chroma_data:
+
+networks:
+  eai-network:
+    driver: bridge
