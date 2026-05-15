@@ -16,9 +16,17 @@
 
 ```
 Eastern-AI-Consultant/
-├── apps/
-│   ├── web/                # Next.js 15 (App Router) + TS + Tailwind + Shadcn
-│   └── api/                # FastAPI + LangChain + LangGraph + Groq + Celery
+├── backend/                # FastAPI + LangChain + LangGraph + Groq + Celery
+│   ├── app/                #   ├ core / db / models / schemas / agents
+│   ├── alembic/            #   ├ migrations
+│   ├── scripts/            #   ├ seed + ops scripts
+│   ├── pyproject.toml      #   └ all Python deps
+│   └── Dockerfile
+├── frontend/               # Next.js 15 (App Router) + TS + Tailwind + Shadcn
+│   ├── src/                #   ├ app / components / lib / hooks / store
+│   ├── public/
+│   ├── package.json
+│   └── Dockerfile
 ├── infra/
 │   └── nginx/              # Reverse proxy config (production)
 ├── docker-compose.yml      # Postgres (pgvector) · Redis · API · Worker · Web · Nginx
@@ -83,7 +91,7 @@ docker compose exec api python -m scripts.seed
 ### Backend (Python 3.12+)
 
 ```bash
-cd apps/api
+cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"               # installs from pyproject.toml
 cp .env.example .env                  # set GROQ_API_KEY, DATABASE_URL, etc.
@@ -95,7 +103,7 @@ python -m scripts.seed
 ### Frontend (Node 20+)
 
 ```bash
-cd apps/web
+cd frontend
 npm install
 cp .env.example .env.local
 npm run dev
