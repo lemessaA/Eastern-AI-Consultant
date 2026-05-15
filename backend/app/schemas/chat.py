@@ -39,6 +39,7 @@ class ConversationRead(BaseModel):
     summary: str | None = None
     pinned: bool
     archived: bool
+    token_total: int = 0
     created_at: datetime
     updated_at: datetime
 

@@ -60,3 +60,4 @@ class EnrollmentRead(BaseModel):
     completed_at: datetime | None = None
     notes: str | None = None
     created_at: datetime
+    course: CourseSummary | None = None

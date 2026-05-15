@@ -105,6 +105,7 @@ async def my_enrollments(user: CurrentUser, db: DB) -> list[EnrollmentRead]:
         await db.execute(
             select(Enrollment)
             .where(Enrollment.user_id == user.id)
+            .options(selectinload(Enrollment.course))
             .order_by(Enrollment.created_at.desc())
         )
     ).scalars().all()
