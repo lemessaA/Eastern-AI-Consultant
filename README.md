@@ -136,7 +136,7 @@ See `.env.example` for the full list.
 
 ```text
 ┌────────────────────────────────────────────────────────────────┐
-│ Next.js (apps/web)                                             │
+│ Next.js (frontend/)                                            │
 │   POST /api/v1/chat/stream  ──── SSE ─────►  user sees tokens  │
 └──────────────────────────┬─────────────────────────────────────┘
                            │
@@ -171,10 +171,10 @@ Business profile → diagnose → swot → automation_plan → marketing_plan �
 
 ```bash
 # Backend
-cd apps/api && pytest
+cd backend && pytest
 
 # Frontend
-cd apps/web && npm run typecheck && npm run lint
+cd frontend && npm run typecheck && npm run lint
 ```
 
 ---
