@@ -9,9 +9,16 @@ caching and Celery workers, and a RAG pipeline backed by ChromaDB.
 ```bash
 cd apps/api
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # then set GROQ_API_KEY etc.
+pip install -e ".[dev]"             # installs all deps + dev tools
+cp .env.example .env                # then set GROQ_API_KEY etc.
 uvicorn app.main:app --reload --port 8000
+```
+
+Dependencies live in [`pyproject.toml`](./pyproject.toml). Production-only
+install:
+
+```bash
+pip install .
 ```
 
 API docs are at <http://localhost:8000/docs>.

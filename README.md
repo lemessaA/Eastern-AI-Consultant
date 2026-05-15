@@ -85,8 +85,8 @@ docker compose exec api python -m scripts.seed
 ```bash
 cd apps/api
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # set GROQ_API_KEY, DATABASE_URL, etc.
+pip install -e ".[dev]"               # installs from pyproject.toml
+cp .env.example .env                  # set GROQ_API_KEY, DATABASE_URL, etc.
 uvicorn app.main:app --reload --port 8000
 # In another terminal — seed:
 python -m scripts.seed
