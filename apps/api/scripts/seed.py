@@ -248,7 +248,7 @@ async def _seed_courses(db) -> None:
             learning_outcomes=c["learning_outcomes"],
             rating=4.7,
             rating_count=124,
-            cover_image=f"https://images.unsplash.com/photo-{(hash(c['slug']) % 10) + 1700000000000}",
+            cover_image=None,
         )
         db.add(course)
         await db.flush()

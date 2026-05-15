@@ -41,6 +41,9 @@ class ConversationRead(BaseModel):
     archived: bool
     created_at: datetime
     updated_at: datetime
+
+
+class ConversationDetailRead(ConversationRead):
     messages: list[MessageRead] = []
 
 

@@ -110,8 +110,8 @@ async def login(payload: LoginRequest, db: DB) -> TokenResponse:
 
 @router.post("/login/form", response_model=TokenResponse, include_in_schema=False)
 async def login_form(
+    db: DB,
     form: OAuth2PasswordRequestForm = Depends(),
-    db: DB = Depends(),  # type: ignore[arg-type]
 ) -> TokenResponse:
     """OAuth2 form-data login used by Swagger UI's 'Authorize'."""
     return await login(LoginRequest(email=form.username, password=form.password), db)

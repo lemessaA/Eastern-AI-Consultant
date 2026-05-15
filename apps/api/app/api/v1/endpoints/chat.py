@@ -21,6 +21,7 @@ from app.models.enums import AgentType, Language, MessageRole
 from app.schemas.chat import (
     ChatStreamRequest,
     ConversationCreate,
+    ConversationDetailRead,
     ConversationRead,
     MessageRead,
 )
@@ -79,10 +80,10 @@ async def create_conversation(
     return ConversationRead.model_validate(convo)
 
 
-@router.get("/conversations/{conversation_id}", response_model=ConversationRead)
+@router.get("/conversations/{conversation_id}", response_model=ConversationDetailRead)
 async def get_conversation(
     conversation_id: uuid.UUID, user: CurrentUser, db: DB
-) -> ConversationRead:
+) -> ConversationDetailRead:
     convo = (
         await db.execute(
             select(Conversation).where(
@@ -99,7 +100,7 @@ async def get_conversation(
             .order_by(Message.created_at)
         )
     ).scalars().all()
-    out = ConversationRead.model_validate(convo)
+    out = ConversationDetailRead.model_validate(convo)
     out.messages = [MessageRead.model_validate(m) for m in msg_rows]
     return out
 
@@ -164,8 +165,9 @@ async def _stream_response(
         db.add(convo)
         await db.flush()
 
-    # Route to the right specialist via LangGraph classifier.
-    forced = request.agent_type if request.agent_type != AgentType.TEACHER else None
+    # Route to the right specialist via LangGraph classifier when the user has
+    # not explicitly picked an agent; otherwise honour their choice.
+    forced = request.agent_type
     agent_type = await classify_agent(request.message, forced=forced)
     convo.agent_type = agent_type
     agent = get_agent(agent_type)

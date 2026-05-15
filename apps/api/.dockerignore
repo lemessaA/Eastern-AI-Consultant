@@ -1,0 +1,16 @@
+__pycache__
+*.py[cod]
+.venv
+venv
+.git
+.env
+.env.local
+*.log
+.pytest_cache
+.mypy_cache
+.ruff_cache
+chroma_db
+uploads
+README.md
+Dockerfile
+.dockerignore

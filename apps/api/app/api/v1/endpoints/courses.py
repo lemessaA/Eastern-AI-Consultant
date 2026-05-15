@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app.core.deps import DB, CurrentUser
 from app.models.enums import CourseLevel, CourseStatus, Language
@@ -60,20 +61,19 @@ async def list_courses(
 @router.get("/{slug}", response_model=CourseRead)
 async def get_course(slug: str, db: DB) -> CourseRead:
     course = (
-        await db.execute(select(Course).where(Course.slug == slug))
+        await db.execute(
+            select(Course)
+            .where(Course.slug == slug)
+            .options(selectinload(Course.lessons))
+        )
     ).scalar_one_or_none()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
-    lessons = (
-        await db.execute(
-            select(Lesson)
-            .where(Lesson.course_id == course.id)
-            .order_by(Lesson.order_index)
-        )
-    ).scalars().all()
-    out = CourseRead.model_validate(course)
-    out.lessons = [LessonRead.model_validate(le) for le in lessons]
-    return out
+    # Manually build to ensure ordered lessons and avoid relationship lazy access.
+    lessons = sorted(course.lessons, key=lambda le: le.order_index)
+    payload = CourseRead.model_validate(course)
+    payload.lessons = [LessonRead.model_validate(le) for le in lessons]
+    return payload
 
 
 @router.post("/{slug}/enroll", response_model=EnrollmentRead)

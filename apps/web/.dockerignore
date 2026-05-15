@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.env*.local
+.env
+.vercel
+README.md
+Dockerfile
+.dockerignore
+coverage
+*.log
+.DS_Store

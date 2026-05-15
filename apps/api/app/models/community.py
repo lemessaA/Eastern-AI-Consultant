@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class ForumPost(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "forum_posts"
+
     author_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )

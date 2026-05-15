@@ -7,6 +7,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app.core.deps import DB, CurrentUser
 from app.models.community import Comment, ForumPost, Reaction
@@ -29,14 +30,16 @@ async def list_posts(
     category: str | None = None,
     search: str | None = None,
 ) -> PaginatedResponse[ForumPostRead]:
-    stmt = select(ForumPost)
+    stmt = select(ForumPost).options(selectinload(ForumPost.author))
     if category:
         stmt = stmt.where(ForumPost.category == category)
     if search:
         like = f"%{search.lower()}%"
         stmt = stmt.where(func.lower(ForumPost.title).like(like))
 
-    total = (await db.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
+    total = (
+        await db.execute(select(func.count(ForumPost.id)).select_from(ForumPost))
+    ).scalar_one()
     rows = (
         await db.execute(
             stmt.order_by(ForumPost.created_at.desc())
@@ -69,14 +72,18 @@ async def create_post(payload: ForumPostCreate, user: CurrentUser, db: DB) -> Fo
     )
     db.add(post)
     await db.commit()
-    await db.refresh(post)
+    await db.refresh(post, attribute_names=["author"])
     return ForumPostRead.model_validate(post)
 
 
 @router.get("/posts/{slug}", response_model=ForumPostRead)
 async def get_post(slug: str, db: DB) -> ForumPostRead:
     post = (
-        await db.execute(select(ForumPost).where(ForumPost.slug == slug))
+        await db.execute(
+            select(ForumPost)
+            .options(selectinload(ForumPost.author))
+            .where(ForumPost.slug == slug)
+        )
     ).scalar_one_or_none()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -99,6 +106,7 @@ async def list_comments(slug: str, db: DB) -> list[CommentRead]:
     rows = (
         await db.execute(
             select(Comment)
+            .options(selectinload(Comment.author))
             .where(Comment.post_id == post.id)
             .order_by(Comment.created_at)
         )
@@ -123,7 +131,7 @@ async def add_comment(
     )
     db.add(comment)
     await db.commit()
-    await db.refresh(comment)
+    await db.refresh(comment, attribute_names=["author"])
     return CommentRead.model_validate(comment)
 
 

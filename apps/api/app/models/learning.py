@@ -113,6 +113,8 @@ class Enrollment(Base, UUIDPKMixin, TimestampMixin):
 
 
 class LessonProgress(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "lesson_progress"
+
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     lesson_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False
@@ -127,6 +129,8 @@ class LessonProgress(Base, UUIDPKMixin, TimestampMixin):
 
 
 class Quiz(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "quizzes"
+
     lesson_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False
     )
@@ -141,8 +145,10 @@ class Quiz(Base, UUIDPKMixin, TimestampMixin):
 
 
 class QuizAttempt(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "quiz_attempts"
+
     quiz_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("quizs.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)

@@ -18,6 +18,8 @@ if TYPE_CHECKING:
 
 
 class Business(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "businesses"
+
     owner_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
@@ -46,6 +48,8 @@ class Business(Base, UUIDPKMixin, TimestampMixin):
 
 
 class BusinessDocument(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "business_documents"
+
     business_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("businesses.id", ondelete="CASCADE"), nullable=False
     )

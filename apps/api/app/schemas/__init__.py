@@ -20,6 +20,7 @@ from app.schemas.business import (
 from app.schemas.chat import (
     ChatStreamRequest,
     ConversationCreate,
+    ConversationDetailRead,
     ConversationRead,
     MessageRead,
 )
@@ -49,6 +50,7 @@ __all__ = [
     "CommentCreate",
     "CommentRead",
     "ConversationCreate",
+    "ConversationDetailRead",
     "ConversationRead",
     "CourseRead",
     "CourseSummary",

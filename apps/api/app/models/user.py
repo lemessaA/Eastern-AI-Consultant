@@ -93,6 +93,7 @@ class User(Base, UUIDPKMixin, TimestampMixin):
 
 
 class OAuthAccount(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "oauth_accounts"
     __table_args__ = (UniqueConstraint("provider", "provider_account_id"),)
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -108,6 +109,8 @@ class OAuthAccount(Base, UUIDPKMixin, TimestampMixin):
 
 
 class UserSession(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "user_sessions"
+
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )

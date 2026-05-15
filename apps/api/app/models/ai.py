@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 
 class AIReport(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "ai_reports"
+
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
@@ -67,6 +69,8 @@ class Automation(Base, UUIDPKMixin, TimestampMixin):
 
 
 class AutomationRun(Base, UUIDPKMixin, TimestampMixin):
+    __tablename__ = "automation_runs"
+
     automation_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("automations.id", ondelete="CASCADE"), nullable=False
     )
