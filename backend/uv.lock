@@ -803,7 +803,6 @@ dependencies = [
     { name = "python-multipart" },
     { name = "redis" },
     { name = "reportlab" },
-    { name = "sentence-transformers" },
     { name = "slowapi" },
     { name = "sqlalchemy" },
     { name = "structlog" },
@@ -818,6 +817,9 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
+]
+local-embed = [
+    { name = "sentence-transformers" },
 ]
 
 [package.metadata]
@@ -861,7 +863,7 @@ requires-dist = [
     { name = "redis", specifier = "==5.2.0" },
     { name = "reportlab", specifier = "==4.2.5" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.8.1" },
-    { name = "sentence-transformers", specifier = "==3.3.1" },
+    { name = "sentence-transformers", marker = "extra == 'local-embed'", specifier = "==3.3.1" },
     { name = "slowapi", specifier = "==0.1.9" },
     { name = "sqlalchemy", specifier = "==2.0.35" },
     { name = "structlog", specifier = "==24.4.0" },
@@ -869,7 +871,7 @@ requires-dist = [
     { name = "unstructured", specifier = "==0.16.10" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.32.1" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "local-embed"]
 
 [[package]]
 name = "ecdsa"
