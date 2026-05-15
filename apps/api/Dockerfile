@@ -15,9 +15,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install dependencies first (better layer caching). Copy only the build
+# manifest so that source-only changes don't bust the pip layer.
+COPY pyproject.toml README.md ./
+RUN pip install --upgrade pip setuptools wheel \
+ && pip install --no-cache-dir .
 
+# Copy the rest of the source tree.
 COPY . .
 
 RUN mkdir -p /app/uploads /app/chroma_db
