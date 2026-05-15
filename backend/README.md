@@ -7,7 +7,7 @@ caching and Celery workers, and a RAG pipeline backed by ChromaDB.
 ## Quickstart (local Python)
 
 ```bash
-cd apps/api
+cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"             # installs all deps + dev tools
 cp .env.example .env                # then set GROQ_API_KEY etc.
