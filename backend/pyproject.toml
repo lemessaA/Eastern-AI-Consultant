@@ -2,7 +2,7 @@
 name = "eastern-ai-api"
 version = "1.0.0"
 description = "Eastern AI Consultant — FastAPI backend with LangChain/LangGraph multi-agent AI"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 authors = [{ name = "Eastern AI Consultant" }]
 readme = "README.md"
 license = { text = "Proprietary" }
@@ -20,7 +20,10 @@ dependencies = [
     "email-validator==2.2.0",
 
     # --- Database ---
-    "sqlalchemy==2.0.36",
+    # NOTE: SQLAlchemy is held at 2.0.35 because langchain-community 0.3.8
+    # caps it at <2.0.36 (the 2.0.36 release came out a day after that
+    # langchain-community release).  Bump both together when upgrading.
+    "sqlalchemy==2.0.35",
     "asyncpg==0.30.0",
     "alembic==1.14.0",
     "psycopg2-binary==2.9.10",
@@ -47,8 +50,9 @@ dependencies = [
     "tiktoken==0.8.0",
 
     # --- RAG / Vector ---
+    # ChromaDB ships its own ONNX-based default embedder; sentence-transformers
+    # (and the ~2 GB torch dependency) is *optional* — see [local-embed] extra.
     "chromadb==0.5.20",
-    "sentence-transformers==3.3.1",
 
     # --- Document parsing ---
     "pypdf==5.1.0",
@@ -79,6 +83,13 @@ dev = [
     "pytest-asyncio==0.24.0",
     "ruff==0.8.1",
     "mypy==1.13.0",
+]
+
+# Optional: local embeddings via sentence-transformers (pulls ~2 GB of torch).
+# Only install when you cannot/will-not use OpenAI embeddings.
+#   uv sync --extra local-embed
+local-embed = [
+    "sentence-transformers==3.3.1",
 ]
 
 [project.urls]
