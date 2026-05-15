@@ -9,9 +9,10 @@ license = { text = "Proprietary" }
 
 dependencies = [
     # --- Web framework ---
-    "fastapi==0.115.5",
-    "uvicorn[standard]==0.32.1",
-    "python-multipart==0.0.19",
+    # The `[standard]` extra pulls in `fastapi-cli` so the `fastapi dev` /
+    # `fastapi run` commands work, plus `uvicorn[standard]`, `python-multipart`,
+    # `email-validator`, and `httpx`.
+    "fastapi[standard]==0.115.5",
     "slowapi==0.1.9",
 
     # --- Validation / settings ---
