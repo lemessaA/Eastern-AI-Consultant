@@ -10,10 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/hooks/use-translation";
 import { useAuthStore } from "@/store/auth";
-import type { AgentType } from "@/types";
-import { API_BASE } from "@/lib/api";
+import { api, API_BASE } from "@/lib/api";
+import type { AgentType, ChatMessage as ChatMessageType, Conversation } from "@/types";
 
-export function ChatWindow({ initialAgent = "teacher" as AgentType }: { initialAgent?: AgentType }) {
+interface ChatWindowProps {
+  initialAgent?: AgentType;
+  initialConversationId?: string | null;
+}
+
+export function ChatWindow({
+  initialAgent = "teacher",
+  initialConversationId = null,
+}: ChatWindowProps) {
   const { t, locale } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.accessToken);
@@ -21,10 +29,38 @@ export function ChatWindow({ initialAgent = "teacher" as AgentType }: { initialA
   const [agent, setAgent] = React.useState<AgentType>(initialAgent);
   const [messages, setMessages] = React.useState<MessageData[]>([]);
   const [input, setInput] = React.useState("");
-  const [conversationId, setConversationId] = React.useState<string | null>(null);
+  const [conversationId, setConversationId] = React.useState<string | null>(initialConversationId);
   const [streaming, setStreaming] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
   const endRef = React.useRef<HTMLDivElement | null>(null);
+
+  // Hydrate from an existing conversation when navigated to via /chat?conversation=<id>.
+  React.useEffect(() => {
+    if (!initialConversationId) return;
+    let cancelled = false;
+    api
+      .get<Conversation & { messages: ChatMessageType[] }>(
+        `/chat/conversations/${initialConversationId}`,
+      )
+      .then((c) => {
+        if (cancelled) return;
+        setAgent(c.agent_type as AgentType);
+        setMessages(
+          (c.messages ?? []).map((m) => ({
+            id: m.id,
+            role: m.role === "assistant" ? "assistant" : "user",
+            content: m.content,
+            agent: m.agent_type ?? null,
+          })),
+        );
+      })
+      .catch(() => {
+        // soft-fail; user can still start a new chat
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialConversationId]);
 
   React.useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
