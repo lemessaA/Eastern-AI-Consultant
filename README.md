@@ -181,8 +181,8 @@ cd frontend && npm run typecheck && npm run lint
 
 ## 📦 Deploying to production
 
-- **Vercel** for `apps/web` — set `NEXT_PUBLIC_API_URL` to your backend URL.
-- **Railway / Fly / AWS ECS** for `apps/api` (FastAPI + Celery + Postgres + Redis).
+- **Vercel** for `frontend/` — set `NEXT_PUBLIC_API_URL` to your backend URL.
+- **Railway / Fly / AWS ECS** for `backend/` (FastAPI + Celery + Postgres + Redis).
 - **Cloudflare / Fastly** in front for CDN + low-bandwidth optimisation.
 
 The shipped `docker-compose.yml` is production-ready: healthchecks on every
@@ -212,7 +212,7 @@ After `python -m scripts.seed`:
 | `so` | Somali       | Af-Soomaali  |
 
 Both the UI **and** AI responses are localised. Add a new language by extending
-`apps/web/src/lib/i18n/translations.ts` and `apps/api/app/agents/base.py`.
+`frontend/src/lib/i18n/translations.ts` and `backend/app/agents/base.py`.
 
 ---
 
