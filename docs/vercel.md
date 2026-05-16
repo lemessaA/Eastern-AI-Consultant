@@ -170,6 +170,7 @@ Each directory gets its **own** linked project.
 | **Import errors on Vercel** | Confirm **Root Directory** is **`backend`**, **`entrypoint`** = **`app.main:app`**. |
 | **Timeouts on chat/stream** | **Settings → Functions** → **Max Duration**. Avoid invalid `functions` globs on framework FastAPI. Pro caps: [limits](https://vercel.com/docs/functions/limitations). |
 | **CORS errors** | Fix **`CORS_ORIGINS`**; redeploy API. |
+| **Frontend calls `localhost:8000` in production** | Set **`NEXT_PUBLIC_API_URL`** to the deployed API (`https://…`) in the **frontend** project; missing value falls back to localhost until you **redeploy** the web app. |
 | **Database errors** | Verify **`postgresql+asyncpg://`** scheme; some hosts require SSL query params (`?ssl=require`) — see provider docs. |
 
 ---
