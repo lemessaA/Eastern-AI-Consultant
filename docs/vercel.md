@@ -1,5 +1,7 @@
 # Deploying on Vercel (frontend + API separately)
 
+> **Full numbered guide:** **[DEPLOYMENT.md](./DEPLOYMENT.md)**
+
 Use **two Vercel projects** from the same Git repository, each with a different **Root Directory** so builds stay isolated.
 
 Official reference: [Deploy a FastAPI app on Vercel](https://vercel.com/docs/frameworks/backend/fastapi) and [Next.js on Vercel](https://vercel.com/docs/frameworks/nextjs).

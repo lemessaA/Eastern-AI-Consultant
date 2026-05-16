@@ -113,12 +113,14 @@ Open <http://localhost:3000>.
 
 ---
 
-## ☁️ Vercel · Render
+## ☁️ Production deployment
+
+**Step-by-step (full checklist): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
 
 | Setup | Doc |
 |--------|-----|
-| **Frontend on Vercel + FastAPI on Vercel** (two projects, `frontend` / `backend` roots) | [`docs/vercel.md`](docs/vercel.md) |
-| **Frontend on Vercel + FastAPI on Render (Docker)** _(works well for this stack)_ | [`docs/render-vercel.md`](docs/render-vercel.md) — [`render.yaml`](render.yaml) at repo root |
+| **Frontend on Vercel + FastAPI on Render (recommended)** | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/render-vercel.md](docs/render-vercel.md), [`render.yaml`](render.yaml) |
+| **Both on Vercel** (`frontend/` + `backend/` as two projects) | [docs/vercel.md](docs/vercel.md) |
 
 ---
 

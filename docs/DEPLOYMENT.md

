@@ -1,0 +1,312 @@
+# Full deployment guide — step by step
+
+This guide walks you from zero to a **live production setup** that matches how this repo is designed to scale:
+
+- **API (FastAPI)** on **[Render](https://render.com)** using **Docker** (`backend/Dockerfile`)
+- **Frontend (Next.js)** on **[Vercel](https://vercel.com)**
+
+You can use the same steps with small changes if your API runs on Railway, Fly.io, or AWS instead — the **environment variable names** stay the same.
+
+**Related (shorter):**
+
+- [render-vercel.md](./render-vercel.md) — condensed Render + Vercel notes  
+- [vercel.md](./vercel.md) — both apps on Vercel only (optional)  
+- Repo root [`render.yaml`](../render.yaml) — Blueprint for the API service  
+
+---
+
+## What you need before you start
+
+1. **Git repository** with this code pushed to **GitHub**, **GitLab**, or **Bitbucket** (Render and Vercel connect to git).
+2. **Accounts:** [Render](https://dashboard.render.com) and [Vercel](https://vercel.com).
+3. At least one **LLM key** for production: **`GROQ_API_KEY`** (recommended; used across agents). Optional: **`OPENAI_API_KEY`** for embeddings / fallbacks.
+4. (Optional but common) **Google Cloud** project if you use **Google OAuth** — you will create OAuth client IDs bound to your production URLs.
+
+---
+
+## Part A — Database and cache (Render)
+
+### Step A1 — Create PostgreSQL
+
+1. Log in to **[Render Dashboard](https://dashboard.render.com)**.
+2. Click **New +** → **PostgreSQL**.
+3. Choose a **name** (e.g. `eastern-ai-db`), **region**, and **plan**.
+4. Wait until the database is **Available**.
+5. Copy the **Internal Database URL** (recommended for the API when the API is also on Render).  
+   Keep a copy of the **External** URL only if you must run migrations from your laptop.
+
+### Step A2 — Create Redis
+
+1. **New +** → **Redis**.
+2. Name it (e.g. `eastern-ai-redis`), pick **region** (ideally same region as Postgres and the API).
+3. Copy the **Internal Redis URL**.
+
+### Step A3 — Convert Postgres URL for this app
+
+Render’s connection string usually looks like:
+
+`postgresql://USER:PASSWORD@HOST:PORT/DATABASE`
+
+This project needs **two** variables (see `backend/.env.example`):
+
+| Variable | What to use |
+|----------|-------------|
+| **`DATABASE_URL`** | Same host/user/password/db, but scheme **`postgresql+asyncpg://`** (not `postgres://` alone). Example: `postgresql+asyncpg://user:pass@dpg-xxxxx-a.oregon-postgres.render.com/eastern_ai` |
+| **`SYNC_DATABASE_URL`** | Same credentials with **`postgresql+psycopg2://`** — used for **Alembic** and any sync scripts. |
+
+Replace `postgresql://` at the start if needed; **do not** leak these strings in public tickets or commits.
+
+---
+
+## Part B — Deploy the API on Render (Docker)
+
+You can use the **Blueprint** (fastest) or **manual Web Service**.
+
+### Step B1 — Blueprint (recommended)
+
+1. In Render: **New +** → **Blueprint**.
+2. Connect the **same repo** that contains this monorepo.
+3. Render detects [`render.yaml`](../render.yaml) at the **repository root**.
+4. Apply the Blueprint. A **Web Service** named **`eastern-ai-api`** (unless you changed it) should appear.
+
+### Step B2 — Manual Web Service (alternative)
+
+If you prefer not to use Blueprints:
+
+1. **New +** → **Web Service** → connect repo.
+2. **Runtime:** **Docker**.
+3. **Dockerfile path:** `backend/Dockerfile`
+4. **Docker build context:** `backend`
+5. **Health check path:** `/api/v1/health`
+6. Create the service and wait for the first build.
+
+### Step B3 — Set environment variables on the API service
+
+In Render → your **Web Service** → **Environment**:
+
+1. Set **`DATABASE_URL`** and **`SYNC_DATABASE_URL`** (from Part A, converted).
+2. Set **`REDIS_URL`** (Internal URL from Redis).
+3. Set **`CORS_ORIGINS`** — comma-separated list of **browser origins** allowed to call your API. Minimum for Vercel production:
+   - `https://YOUR-APP.vercel.app`  
+   Optional: add preview URLs (each preview has its own subdomain) or `https://*.vercel.app` for convenience (broader; use only if you understand the trade-off).
+4. Set **`GROQ_API_KEY`** (required for most AI features).
+5. Set **`OPENAI_API_KEY`** if you rely on OpenAI (embeddings / models).
+6. Set **`ENVIRONMENT`** = `production`, **`DEBUG`** = `false` (often already set by `render.yaml`).
+7. **`SECRET_KEY`** and **`JWT_SECRET`:** long random strings (Render may have auto-generated some; you can replace in the dashboard).
+8. **Google OAuth** (if used):
+   - **`GOOGLE_CLIENT_ID`**, **`GOOGLE_CLIENT_SECRET`**
+   - **`GOOGLE_REDIRECT_URI`** must be exactly:
+     - `https://<your-render-service-hostname>/api/v1/auth/google/callback`  
+     You will add the same URL in Google Cloud Console (Part D).
+9. **Files / RAG / uploads** (see “Storage on Render” below).
+
+**Reference:** full list and comments in [`backend/.env.example`](../backend/.env.example).
+
+### Step B4 — Storage on Render (important)
+
+Render **web** instances have an **ephemeral** filesystem. Anything under `UPLOAD_DIR` or `VECTOR_STORE_PATH` can disappear on restart.
+
+**Recommended for production:**
+
+- **`STORAGE_BACKEND`** = `s3` or `cloudinary`
+- Fill **`CLOUDINARY_URL`** or AWS S3 variables from `backend/.env.example`
+
+[`render.yaml`](../render.yaml) sets **`UPLOAD_DIR`** and **`VECTOR_STORE_PATH`** under **`/tmp`** as a safe default for “no persistent disk”; still prefer object storage for anything you must keep.
+
+### Step B5 — Deploy and open docs
+
+1. Click **Manual Deploy** → **Deploy latest commit** if you changed env after build.
+2. When **Live**, open:
+   - `https://<your-service>.onrender.com/` — JSON info
+   - `https://<your-service>.onrender.com/docs` — **Swagger**
+
+### Step B6 — Run database migrations
+
+The API does not automatically run **Alembic** on every boot unless you configure that. Apply schema once (or on each release) with **`alembic upgrade head`**, using **`SYNC_DATABASE_URL`**.
+
+**Options:**
+
+| Method | When to use |
+|--------|-------------|
+| **Render Shell** (if available on your plan) | SSH/shell into the running service → `cd /app` → run `alembic upgrade head` |
+| **Local machine** | Install backend deps locally, export **`SYNC_DATABASE_URL`** pointing at Render Postgres **external** URL, run `alembic upgrade head` from `backend/` |
+| **CI job** | GitHub Action that runs migrations on merge to `main` with secrets |
+
+From `backend/` with venv activated:
+
+```bash
+export SYNC_DATABASE_URL="postgresql+psycopg2://..."  # Render external or internal from a trusted runner
+alembic upgrade head
+```
+
+### Step B7 — (Optional) Seed demo data
+
+If you want the same demo admin/courses as local Docker:
+
+```bash
+# Requires Python env + DATABASE_URL / SYNC_DATABASE_URL appropriate for the target DB
+cd backend && python -m scripts.seed
+```
+
+**Security:** Rotate default passwords (`README.md`) before going public.
+
+---
+
+## Part C — Deploy the frontend on Vercel
+
+### Step C1 — New project
+
+1. Go to **[Vercel Dashboard](https://vercel.com/dashboard)** → **Add New…** → **Project**.
+2. **Import** your git repository.
+
+### Step C2 — Root directory
+
+1. Under **Configure Project**, set **Root Directory** to **`frontend`**.
+2. Framework should detect **Next.js** (see [`frontend/package.json`](../frontend/package.json)).
+3. **Build command:** default `npm run build` is fine unless you customized it.
+4. **Output:** handled by Next.js on Vercel.
+
+### Step C3 — Environment variables (frontend)
+
+In **Environment Variables**, at least:
+
+| Name | Example | Notes |
+|------|---------|--------|
+| **`NEXT_PUBLIC_API_URL`** | `https://eastern-ai-api.onrender.com` | Render API URL (**no trailing slash**) |
+| **`NEXT_PUBLIC_APP_URL`** | `https://your-project.vercel.app` | Used for redirects / links / OAuth UX |
+| **`NEXT_PUBLIC_APP_NAME`** | `Eastern AI Consultant` | Optional |
+| **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`** | same as backend Google OAuth | If the UI uses Google sign-in |
+| **`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`** | `pk_live_…` | If you enable Stripe |
+
+Use **Production** scope for production keys; optionally duplicate for **Preview** with a staging API URL.
+
+### Step C4 — Deploy
+
+1. **Deploy**.
+2. When finished, open the **.vercel.app** URL.
+
+### Step C5 — Redeploy when API URL changes
+
+Any time **`NEXT_PUBLIC_API_URL`** changes, trigger a **new deployment** so the bundle picks up the new value.
+
+---
+
+## Part D — Google OAuth (optional)
+
+Only if you use Google login.
+
+### Step D1 — Google Cloud Console
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → **Credentials**.
+2. **Create OAuth client** → **Web application**.
+3. **Authorized redirect URIs** — add exactly:
+   - `https://<RENDER-HOST>/api/v1/auth/google/callback`
+4. **Authorized JavaScript origins** — add:
+   - `https://<YOUR-VERCEL-APP>.vercel.app`  
+   (and production custom domain later)
+
+### Step D2 — Copy IDs
+
+- Paste **Client ID** into Render **`GOOGLE_CLIENT_ID`** (and **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`** on Vercel if the SPA needs it).
+- Paste **Client secret** only into **`GOOGLE_CLIENT_SECRET`** on Render (never in `NEXT_PUBLIC_*`).
+
+### Step D3 — Match `GOOGLE_REDIRECT_URI` on Render
+
+It must equal the redirect URI you registered in Google, character for character (`https`, no typo).
+
+---
+
+## Part E — Wire everything together (checklist)
+
+| # | Task | Done |
+|---|------|------|
+| 1 | Postgres + Redis running on Render | ☐ |
+| 2 | `DATABASE_URL` / `SYNC_DATABASE_URL` / `REDIS_URL` set on API | ☐ |
+| 3 | `alembic upgrade head` succeeded | ☐ |
+| 4 | API `/docs` loads over HTTPS | ☐ |
+| 5 | Vercel `NEXT_PUBLIC_API_URL` = Render API base URL | ☐ |
+| 6 | Render `CORS_ORIGINS` includes Vercel site origin(s) | ☐ |
+| 7 | Frontend redeployed after env changes | ☐ |
+| 8 | Google OAuth URLs aligned (if applicable) | ☐ |
+| 9 | Strong `SECRET_KEY` / `JWT_SECRET`; no `.env` in git | ☐ |
+
+### Quick verification from the browser
+
+1. Open the **Vercel** site → sign-up or login → confirm network calls hit **`NEXT_PUBLIC_API_URL`** (browser devtools → Network).
+2. If you see **CORS errors**, fix **`CORS_ORIGINS`** on Render (include scheme + host, no path).
+
+---
+
+## Part F — Custom domains (optional)
+
+1. **Vercel** → Project → **Settings** → **Domains** → add `app.yourdomain.com`, follow DNS instructions.
+2. **Render** → Web Service → **Settings** → **Custom Domains** → add `api.yourdomain.com`.
+3. Update:
+   - **`NEXT_PUBLIC_APP_URL`**, **`NEXT_PUBLIC_API_URL`**
+   - **`CORS_ORIGINS`**
+   - **`GOOGLE_REDIRECT_URI`** and Google Console origins/redirects
+
+---
+
+## Part G — Celery and background workers (optional)
+
+Background jobs (**Celery**) are **not** started by default in the Dockerfile `CMD` (it runs **uvicorn** only).
+
+To run workers:
+
+1. Add a **second** Render **Background Worker** (or Worker type) **or** a separate Railway/Fly **process** using the **same** image and **`REDIS_URL`**, with a command such as **`celery -A ... worker`** aligned with how your repo defines Celery (`backend/`).
+2. Point both at the **same** database and Redis as the API.
+
+Detailed worker command belongs in backend docs / `docker-compose.yml` references.
+
+---
+
+## Part H — Free tier quirks (Render)
+
+- Instances may **spin down** when idle → first request slower (“cold start”).  
+- Upgrade to **always-on** or a paid tier for tighter SLAs.
+
+---
+
+## Alternative: deploy everything with Docker Compose (your own VPS)
+
+If you operate a single VM instead of Render + Vercel:
+
+```bash
+cp .env.example .env
+# Fill all production values on the server
+docker compose up -d --build
+```
+
+Expose **HTTPS** via Nginx/Caddy/`infra/nginx` and set **`CORS_ORIGINS`** / **`NEXT_PUBLIC_API_URL`** to your public URLs. See **`README.md`**.
+
+---
+
+## Alternative: frontend + API both on Vercel
+
+Possible for lighter APIs; your Python stack may hit **bundle or timeout limits**. Steps: **`docs/vercel.md`**.
+
+---
+
+## Troubleshooting
+
+| Symptom | Things to check |
+|--------|-------------------|
+| Browser **CORS** error | `CORS_ORIGINS` on Render includes exact frontend origin (`https://…`). |
+| **502 / deploy failed** | Render logs; Docker build failing (missing env at build rarely needed — usually runtime env). |
+| **Database connection refused** | Use **internal** URLs from the API service on Render when both are on Render; VPC/firewall rules. |
+| **`alembic` errors** | `SYNC_DATABASE_URL` uses **`postgresql+psycopg2://`**; migrate from a trusted runner. |
+| **AI errors** | `GROQ_API_KEY` set; quotas; models in `.env`. |
+| **OAuth redirect mismatch** | `GOOGLE_REDIRECT_URI` identical to Google Console; HTTPS. |
+
+---
+
+## Security reminders
+
+- Never commit **`backend/.env`** or secrets.
+- Rotate **JWT** / **secret** keys and **default seed passwords** before production traffic.
+- Use **HTTPS everywhere** (`https://` origins in CORS).
+
+---
+
+_Last updated alongside `render.yaml` and `backend/.env.example`._

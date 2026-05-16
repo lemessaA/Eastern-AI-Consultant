@@ -1,5 +1,7 @@
 # Backend on Render · Frontend on Vercel
 
+> **Full end-to-end checklist:** [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 This split fits this repo well: **Render** runs the Dockerized FastAPI app (heavy deps, long requests, Celery-friendly host options), while **Vercel** hosts the Next.js frontend.
 
 Official docs: [Render Docker deploy](https://render.com/docs/docker), [Blueprint spec](https://render.com/docs/blueprint-spec), [Next.js on Vercel](https://vercel.com/docs/frameworks/nextjs).
