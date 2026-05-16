@@ -101,6 +101,10 @@ Repository = "https://github.com/eastern-ai/eastern-ai-consultant"
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
+# Vercel: when the project Root Directory is `backend/`, this exposes the ASGI app.
+[tool.vercel]
+entrypoint = "app.main:app"
+
 [tool.setuptools.packages.find]
 include = ["app*"]
 

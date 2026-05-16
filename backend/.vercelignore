@@ -1,0 +1,22 @@
+# Local / secrets
+.env
+.env.*
+!.env.example
+
+# Virtualenv & caches
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Uploaded data & local vector stores (use S3 / managed DB in prod)
+uploads/
+chroma_db/
+
+# Docs & tests excluded from deployment bundle where possible
+tests/
+*.md
+!README.md
