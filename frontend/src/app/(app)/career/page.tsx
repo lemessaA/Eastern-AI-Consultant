@@ -48,6 +48,19 @@ export default function CareerPage() {
   );
 }
 
+interface FieldDef {
+  name: string;
+  label: string;
+  type?: "text" | "textarea";
+  placeholder?: string;
+  required?: boolean;
+  /** Mirrors the Pydantic `min_length` constraint on the backend schema. */
+  minLength?: number;
+  /** Mirrors the Pydantic `max_length` constraint on the backend schema. */
+  maxLength?: number;
+  rows?: number;
+}
+
 function GenericForm({
   endpoint,
   fields,
@@ -57,7 +70,7 @@ function GenericForm({
   title,
 }: {
   endpoint: string;
-  fields: { name: string; label: string; type?: "text" | "textarea"; placeholder?: string; required?: boolean }[];
+  fields: FieldDef[];
   resultKey: string;
   buttonLabel: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -103,17 +116,33 @@ function GenericForm({
         <form onSubmit={onSubmit} className="space-y-4">
           {fields.map((f) => (
             <div key={f.name} className="space-y-2">
-              <Label htmlFor={f.name}>{f.label}</Label>
+              <Label htmlFor={f.name}>
+                {f.label}
+                {f.minLength ? (
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    (at least {f.minLength} characters)
+                  </span>
+                ) : null}
+              </Label>
               {f.type === "textarea" ? (
                 <Textarea
                   id={f.name}
                   name={f.name}
                   required={f.required}
-                  rows={5}
+                  minLength={f.minLength}
+                  maxLength={f.maxLength}
+                  rows={f.rows ?? 5}
                   placeholder={f.placeholder}
                 />
               ) : (
-                <Input id={f.name} name={f.name} required={f.required} placeholder={f.placeholder} />
+                <Input
+                  id={f.name}
+                  name={f.name}
+                  required={f.required}
+                  minLength={f.minLength}
+                  maxLength={f.maxLength}
+                  placeholder={f.placeholder}
+                />
               )}
             </div>
           ))}
@@ -140,10 +169,37 @@ function ResumeBuilder() {
       buttonLabel="Generate resume"
       resultKey="resume_markdown"
       fields={[
-        { name: "target_role", label: "Target role", required: true, placeholder: "Junior Data Analyst — Remote" },
-        { name: "experience_summary", label: "Your experience", type: "textarea", required: true, placeholder: "2 years as a sales analyst at a coffee export firm…" },
-        { name: "skills", label: "Skills (comma-separated)", placeholder: "Python, SQL, Tableau, Amharic, English" },
-        { name: "job_description", label: "Job description (optional)", type: "textarea", placeholder: "Paste the JD here for keyword-targeted output" },
+        {
+          name: "target_role",
+          label: "Target role",
+          required: true,
+          minLength: 2,
+          maxLength: 200,
+          placeholder: "Junior Data Analyst — Remote",
+        },
+        {
+          name: "experience_summary",
+          label: "Your experience",
+          type: "textarea",
+          required: true,
+          minLength: 20,
+          maxLength: 8000,
+          rows: 6,
+          placeholder:
+            "2 years as a sales analyst at a coffee export firm. Built Excel dashboards, automated WhatsApp follow-ups, grew exports 18%…",
+        },
+        {
+          name: "skills",
+          label: "Skills (comma-separated)",
+          placeholder: "Python, SQL, Tableau, Amharic, English",
+        },
+        {
+          name: "job_description",
+          label: "Job description (optional)",
+          type: "textarea",
+          placeholder: "Paste the JD here for keyword-targeted output",
+          rows: 6,
+        },
       ]}
     />
   );
@@ -158,8 +214,22 @@ function CoverLetter() {
       buttonLabel="Generate letter"
       resultKey="cover_letter"
       fields={[
-        { name: "job_description", label: "Job description", type: "textarea", required: true },
-        { name: "candidate_summary", label: "Your background", type: "textarea", required: true },
+        {
+          name: "job_description",
+          label: "Job description",
+          type: "textarea",
+          required: true,
+          minLength: 20,
+          rows: 6,
+        },
+        {
+          name: "candidate_summary",
+          label: "Your background",
+          type: "textarea",
+          required: true,
+          minLength: 20,
+          rows: 5,
+        },
         { name: "tone", label: "Tone", placeholder: "professional / warm / direct" },
       ]}
     />
@@ -175,7 +245,13 @@ function InterviewSim() {
       buttonLabel="Run simulation"
       resultKey="interview_pack"
       fields={[
-        { name: "role", label: "Role", required: true, placeholder: "Frontend Engineer" },
+        {
+          name: "role",
+          label: "Role",
+          required: true,
+          minLength: 2,
+          placeholder: "Frontend Engineer",
+        },
         { name: "seniority", label: "Seniority", placeholder: "junior / mid / senior" },
         { name: "focus", label: "Focus", placeholder: "behavioural / technical / system design" },
       ]}
@@ -192,8 +268,20 @@ function SkillPlan() {
       buttonLabel="Generate roadmap"
       resultKey="plan"
       fields={[
-        { name: "career_goal", label: "Career goal", required: true, placeholder: "Become a remote AI engineer in 12 months" },
-        { name: "current_skills", label: "Current skills (comma-separated)", required: true, placeholder: "Python, Excel, marketing basics" },
+        {
+          name: "career_goal",
+          label: "Career goal",
+          required: true,
+          minLength: 5,
+          placeholder: "Become a remote AI engineer in 12 months",
+        },
+        {
+          name: "current_skills",
+          label: "Current skills (comma-separated)",
+          required: true,
+          minLength: 2,
+          placeholder: "Python, Excel, marketing basics",
+        },
         { name: "horizon_months", label: "Horizon (months)", placeholder: "12" },
       ]}
     />
