@@ -95,7 +95,7 @@ export function LandingNavbar() {
                 {l.label}
               </Link>
             ))}
-            <div className="flex items-center gap-2 pt-2 border-t border-border mt-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-2 border-t border-border mt-2">
               <LanguageSwitcher />
               <ThemeToggle />
               <Link href="/auth/login" className="ml-auto">

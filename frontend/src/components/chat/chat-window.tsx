@@ -1,12 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { Mic, Paperclip, Send, Sparkles, Square, Volume2 } from "lucide-react";
+import { Mic, Paperclip, Send, Sparkles, Square, ChevronDown, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AGENTS, AgentPicker } from "@/components/chat/agent-picker";
 import { ChatMessage, type MessageData } from "@/components/chat/message";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/hooks/use-translation";
 import { useAuthStore } from "@/store/auth";
@@ -247,27 +254,69 @@ export function ChatWindow({
 
       {/* Chat panel */}
       <div className="flex min-h-0 flex-col rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="flex flex-col gap-3 border-b border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               {(() => {
                 const A = AGENTS.find((x) => x.key === agent);
                 const Icon = A?.icon ?? Sparkles;
                 return <Icon className="h-4 w-4" />;
               })()}
             </div>
-            <div>
-              <p className="text-sm font-medium">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
                 {AGENTS.find((x) => x.key === agent)?.name ?? "AI Assistant"}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="line-clamp-2 text-xs text-muted-foreground sm:line-clamp-1">
                 {AGENTS.find((x) => x.key === agent)?.description}
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={newChat}>
-            {t("chat.newChat")}
-          </Button>
+
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 lg:hidden"
+                  aria-label="Change AI specialist"
+                >
+                  Specialists
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-h-[min(24rem,70vh)] w-[min(20rem,calc(100vw-2rem))] overflow-y-auto"
+              >
+                <DropdownMenuRadioGroup
+                  value={agent}
+                  onValueChange={(v) => setAgent(v as AgentType)}
+                >
+                  {AGENTS.map((a) => (
+                    <DropdownMenuRadioItem
+                      key={a.key}
+                      value={a.key}
+                      className="items-start gap-3 py-2"
+                    >
+                      <a.icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="flex min-w-0 flex-col gap-0.5 text-left">
+                        <span className="font-medium leading-tight">{a.name}</span>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {a.description}
+                        </span>
+                      </span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="ghost" size="sm" onClick={newChat} className="shrink-0">
+              {t("chat.newChat")}
+            </Button>
+          </div>
         </div>
 
         {/* Messages */}
@@ -301,7 +350,7 @@ export function ChatWindow({
                 <div key={i} className="group">
                   <ChatMessage message={m} userName={user?.full_name} />
                   {m.role === "assistant" && !m.pending && (
-                    <div className="max-w-3xl mx-auto flex items-center justify-start gap-1 pl-12 -mt-2 mb-2">
+                    <div className="max-w-3xl mx-auto flex items-center justify-start gap-1 pl-11 sm:pl-12 -mt-2 mb-2">
                       <Button
                         variant="ghost"
                         size="sm"
