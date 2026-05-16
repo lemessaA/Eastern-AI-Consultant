@@ -9,6 +9,15 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 const API_BASE = `${API_URL}/api/v1`;
 
+if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+  if (/\blocalhost\b|127\.0\.0\.1/.test(API_URL)) {
+    // eslint-disable-next-line no-console -- intentional deploy misconfiguration hint
+    console.error(
+      "[api] NEXT_PUBLIC_API_URL points at localhost — set it in Vercel to your deployed API (for example https://your-api.onrender.com).",
+    );
+  }
+}
+
 export class APIError extends Error {
   constructor(public status: number, message: string, public detail?: unknown) {
     super(message);

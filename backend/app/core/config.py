@@ -83,8 +83,10 @@ class Settings(BaseSettings):
 
     @field_validator("CORS_ORIGINS")
     @classmethod
-    def _strip_origins(cls, v: str) -> str:
-        return v.strip()
+    def _normalize_cors_origins(cls, v: str) -> str:
+        """Comma-separated origins, trimmed; trailing slashes removed (browser sends none)."""
+        parts = [p.strip().rstrip("/") for p in v.strip().split(",") if p.strip()]
+        return ",".join(parts)
 
     @property
     def cors_origin_list(self) -> list[str]:

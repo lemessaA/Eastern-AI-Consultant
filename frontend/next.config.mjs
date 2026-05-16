@@ -1,3 +1,12 @@
+// =============================================================================
+const isVercel = process.env.VERCEL === "1";
+
+if (isVercel && !process.env.NEXT_PUBLIC_API_URL) {
+  console.warn(
+    "\n[Eastern AI] NEXT_PUBLIC_API_URL is unset on Vercel. Requests will fall back to http://localhost:8000.\n",
+  );
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
