@@ -115,12 +115,10 @@ Open <http://localhost:3000>.
 
 ## ☁️ Production deployment
 
-**Step-by-step (full checklist): [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
-
 | Setup | Doc |
 |--------|-----|
-| **Frontend on Vercel + FastAPI on Render (recommended)** | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/render-vercel.md](docs/render-vercel.md), [`render.yaml`](render.yaml) |
-| **Both on Vercel** (`frontend/` + `backend/` as two projects) | [docs/vercel.md](docs/vercel.md) |
+| **Both on Vercel** (`frontend/` + `backend/` as **two separate projects**) | **[docs/vercel.md](docs/vercel.md)** — primary guide |
+| **Frontend on Vercel + API on Render (Docker)** — good if Python bundle exceeds Vercel limits | [docs/render-vercel.md](docs/render-vercel.md), [`render.yaml`](render.yaml) |
 
 ---
 
@@ -199,7 +197,7 @@ cd frontend && npm run typecheck && npm run lint
 The shipped `docker-compose.yml` is production-ready: healthchecks on every
 service, volumes for Postgres / Redis / uploads / Chroma, and Nginx in front.
 
-See **[docs/render-vercel.md](docs/render-vercel.md)** for Render + Vercel together.
+See **[docs/vercel.md](docs/vercel.md)** (both Vercel) or **[docs/render-vercel.md](docs/render-vercel.md)** (API on Render).
 
 ---
 

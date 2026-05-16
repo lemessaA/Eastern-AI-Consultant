@@ -1,95 +1,179 @@
-# Deploying on Vercel (frontend + API separately)
+# Deploy **frontend + backend** on Vercel (two projects)
 
-> **Full numbered guide:** **[DEPLOYMENT.md](./DEPLOYMENT.md)**
+Use **two Vercel projects** connected to **the same Git repository**, with **different Root Directory** values:
 
-Use **two Vercel projects** from the same Git repository, each with a different **Root Directory** so builds stay isolated.
+| Project | Root Directory | Purpose |
+|---------|----------------|---------|
+| **Web** | `frontend` | Next.js 15 app |
+| **API** | `backend` | FastAPI (single Vercel Function via [official FastAPI on Vercel](https://vercel.com/docs/frameworks/backend/fastapi)) |
 
-Official reference: [Deploy a FastAPI app on Vercel](https://vercel.com/docs/frameworks/backend/fastapi) and [Next.js on Vercel](https://vercel.com/docs/frameworks/nextjs).
+The backend entrypoint is already defined in **`backend/pyproject.toml`**:
 
-> **Prefer the API on Render?** Heavy Python stacks often fit better there; keep only the frontend on Vercel and follow **[docs/render-vercel.md](./render-vercel.md)** (`render.yaml` at repo root).
-
----
-
-## 1. Frontend (Next.js)
-
-1. [Vercel Dashboard](https://vercel.com/dashboard) → **Add New…** → **Project** → import this repo.
-2. **Root Directory:** `frontend`
-3. Framework preset: **Next.js** (detected from `package.json`).
-4. **Settings → Environment Variables** (Production + Preview as needed):
-
-   | Name | Example | Notes |
-   |------|---------|--------|
-   | `NEXT_PUBLIC_API_URL` | `https://your-api.vercel.app` | Public API origin (no trailing slash). |
-   | `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` | Site URL for links / OAuth client config. |
-   | `NEXT_PUBLIC_APP_NAME` | `Eastern AI Consultant` | Optional branding. |
-   | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | _(from Google Cloud)_ | If you use Google sign-in in the browser. |
-   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | _(if billing enabled)_ | Stripe publishable key. |
-
-5. Deploy. Update **Preview** branch env if previews should hit a staging API.
+```toml
+[tool.vercel]
+entrypoint = "app.main:app"
+```
 
 ---
 
-## 2. Backend (FastAPI)
+## 0. Prerequisites
 
-1. **Add New…** → **Project** again (second project) → same repo.
-2. **Root Directory:** `backend`
-3. Vercel detects **Python** / **FastAPI** using `pyproject.toml`. The app entry is set by:
-
-   ```toml
-   [tool.vercel]
-   entrypoint = "app.main:app"
-   ```
-
-4. **Environment variables** — mirror `backend/.env.example` in the Vercel project (Production + Preview). Important ones:
-
-   | Name | Notes |
-   |------|--------|
-   | `ENVIRONMENT` | Use `production` for prod. |
-   | `DEBUG` | `false` in production. |
-   | `DATABASE_URL` | Async URL, e.g. `postgresql+asyncpg://…` (Neon, Supabase, etc.). |
-   | `SYNC_DATABASE_URL` | Sync driver for Alembic/scripts if you run migrations from CI (optional on Vercel). |
-   | `REDIS_URL` | Upstash or another Redis URL if you use caching / rate limits that need Redis. |
-   | `SECRET_KEY`, `JWT_SECRET` | Strong random values. |
-   | `CORS_ORIGINS` | Comma-separated; **must include** your frontend origin, e.g. `https://your-app.vercel.app`. |
-   | `GROQ_API_KEY` | Required for Groq-backed agents. |
-   | `OPENAI_API_KEY` | If you use OpenAI embeddings or models. |
-   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Redirect URI must be the **API** URL, e.g. `https://your-api.vercel.app/api/v1/auth/google/callback`. |
-   | `STORAGE_BACKEND`, `CLOUDINARY_URL` / S3 vars | Prefer `s3` or `cloudinary`; `local` disk is ephemeral on serverless. |
-   | `VECTOR_STORE_PATH`, `UPLOAD_DIR` | Prefer external/object storage — serverless disks are ephemeral. |
-
-5. Deploy and open `https://<your-api>.vercel.app/docs` to verify.
-
-### Backend limitations on Vercel
-
-- Runs as **[Vercel Functions](https://vercel.com/docs/functions)** ([Fluid compute](https://vercel.com/docs/fluid-compute) by default): **timeouts**, **cold starts**, and **[bundle limits](https://vercel.com/docs/functions/limitations)** apply. This repo pulls in large ML/RAG stacks; if installs or bundles fail on Vercel, deploy the API with **Railway / Render / Fly / AWS** using `backend/Dockerfile`.
-- **Celery workers** do not run on Vercel; run workers elsewhere with the same `REDIS_URL` and DB.
-- **Secrets:** never commit `.env`; configure values in **Vercel → Environment Variables**.
+1. Repo pushed to **GitHub**, **GitLab**, or **Bitbucket** (Vercel imports from git).
+2. **Managed PostgreSQL** reachable from the public internet ([Neon](https://neon.tech), [Supabase](https://supabase.com), [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres), Render Postgres external URL, etc.).
+3. **Redis** optional but recommended (`REDIS_URL`) — [Upstash](https://upstash.com) works well (`rediss://…`).
+4. **`GROQ_API_KEY`** (primary LLM); optional **`OPENAI_API_KEY`** for embeddings/models.
+5. Understand limits: **[Vercel Functions limitations](https://vercel.com/docs/functions/limitations)** (timeouts, bundle size ~500 MB guideline, cold starts). This repo is **heavy** (LangChain, ChromaDB, etc.); if **Python install or deploy fails**, use Docker on **[Render](./render-vercel.md)** instead.
 
 ---
 
-## 3. Wire frontend ↔ API
+## 1. Create the **API** project (deploy this first)
 
-1. Set `NEXT_PUBLIC_API_URL` on the **frontend** to the deployed **backend** URL.
-2. Set backend `CORS_ORIGINS` to include every **frontend** URL (preview + production as needed).
-3. Redeploy the frontend after env changes.
+1. [Vercel Dashboard](https://vercel.com/dashboard) → **Add New…** → **Project**.
+2. **Import** your repository.
+3. **Root Directory:** set to **`backend`** (“Edit” next to Repository if needed).
+4. Framework **Python** / **FastAPI** should be detected (`pyproject.toml` + `tool.vercel.entrypoint`).
+5. **Environment Variables** (Production). Minimum set:
+
+   | Variable | Example / notes |
+   |----------|-----------------|
+   | `ENVIRONMENT` | `production` |
+   | `DEBUG` | `false` |
+   | `DATABASE_URL` | `postgresql+asyncpg://USER:PASSWORD@HOST/DB` |
+   | `SYNC_DATABASE_URL` | `postgresql+psycopg2://…` — for **Alembic** migrations from CI/local |
+   | `REDIS_URL` | `redis://…` or `rediss://…` (Upstash) |
+   | `SECRET_KEY` | Long random string |
+   | `JWT_SECRET` | Long random string |
+   | `CORS_ORIGINS` | **Comma-separated.** After you know frontend URL(s), set e.g. `https://your-app.vercel.app` (add preview URLs separately if needed). Temporarily wrong CORS → fix → **Redeploy** backend. |
+   | `GROQ_API_KEY` | From [Groq console](https://console.groq.com) |
+   | `OPENAI_API_KEY` | If you use OpenAI |
+   | `GOOGLE_REDIRECT_URI` | `https://YOUR-API-PROJECT.vercel.app/api/v1/auth/google/callback` (match final API URL) |
+
+   Mirror the rest from [`backend/.env.example`](../backend/.env.example) (`STORAGE_BACKEND`, S3/Cloudinary, etc.).
+
+6. **`CORS_ORIGINS` note:** Until the frontend exists, you can skip or use a placeholder, then update when the frontend project gets its `.vercel.app` URL and **Redeploy** the API.
+
+7. **Ephemeral filesystem:** avoid relying on **`local`** disk for durable uploads/RAG paths. Prefer **`cloudinary`** or **`s3`** (`STORAGE_BACKEND` + credentials). **`backend/vercel.json`** sets **`maxDuration`** so long‑running/streaming handlers can run longer (streaming still consumes function duration — see **[max duration docs](https://vercel.com/docs/functions/configuring-functions/duration)** and raise limits in Dashboard if needed).
+
+8. **Deploy.**
+
+9. **Smoke test:** `https://<api-project>.vercel.app/` and **`/docs`**.
 
 ---
 
-## 4. Custom domains
+## 2. Database migrations (Alembic)
 
-In each project → **Settings → Domains** (for example `app.example.com` and `api.example.com`). Update env vars and Google OAuth redirects to match.
+Serverless deployments do **not** automatically run **`alembic upgrade head`** for you unless you add a step.
+
+Pick one:
+
+- Run from your laptop (or CI) against production:
+
+  ```bash
+  cd backend
+  export SYNC_DATABASE_URL="postgresql+psycopg2://..."
+  alembic upgrade head
+  ```
+
+- Or add a **GitHub Action** on merge to `main` that installs Python, sets `SYNC_DATABASE_URL` from secrets, and runs **`alembic upgrade head`**.
+
+Optional seed (rotate passwords afterward):
+
+```bash
+# Same DB as production — use only if intentional
+DATABASE_URL=... SYNC_DATABASE_URL=... python -m scripts.seed
+```
 
 ---
 
-## 5. CLI (optional)
+## 3. Create the **Frontend** project
 
-From each app directory:
+1. **Add New…** → **Project** → **same repository** (again).
+2. **Root Directory:** **`frontend`**.
+3. Framework: **Next.js** — default build (`npm run build`).
+4. **Environment variables:**
+
+   | Variable | Example |
+   |----------|---------|
+   | **`NEXT_PUBLIC_API_URL`** | `https://your-api-project.vercel.app` — **no trailing slash** |
+   | **`NEXT_PUBLIC_APP_URL`** | `https://your-web-project.vercel.app` |
+   | `NEXT_PUBLIC_APP_NAME` | Optional |
+   | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | If using Google OAuth in UI |
+   | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | If Stripe in UI |
+
+5. **Deploy.**
+
+6. If you change **`NEXT_PUBLIC_*`**, trigger a **new deployment** (rebuild required).
+
+---
+
+## 4. Connect API ↔ Frontend
+
+1. **Backend** **`CORS_ORIGINS`:** must include **`https://<your-frontend-host>`** exactly (scheme + hostname, **no trailing slash**, no path). Add multiple comma-separated origins for preview deployments if needed.
+2. **Frontend** **`NEXT_PUBLIC_API_URL`:** backend base URL (same as Swagger host without `/docs`).
+3. **Redeploy API** after CORS edits.
+4. In the browser, open frontend → login/API call → **Network** tab: requests should hit the API hostname; **CORS** errors usually mean **`CORS_ORIGINS`** missing or typo.
+
+---
+
+## 5. Google OAuth (optional)
+
+1. Google Cloud Console → **Credentials** → OAuth **Web client**.
+2. **Authorized redirect URIs:**  
+   `https://YOUR-API-HOST.vercel.app/api/v1/auth/google/callback`
+3. **Authorized JavaScript origins:**  
+   `https://YOUR-FRONTEND-HOST.vercel.app`
+4. Copy **Client ID** → Vercel **API**: `GOOGLE_CLIENT_ID`; **Frontend** (public): **`NEXT_PUBLIC_GOOGLE_CLIENT_ID`**.
+5. **Client secret** → API **`GOOGLE_CLIENT_SECRET`** only.
+6. **API:** `GOOGLE_REDIRECT_URI` must match redirect URI exactly.
+7. Redeploy both if URLs change.
+
+---
+
+## 6. Custom domains
+
+Per project → **Settings** → **Domains** (e.g. `api.example.com`, `www.example.com`).
+
+Update **`CORS_ORIGINS`**, **`NEXT_PUBLIC_APP_URL`**, **`NEXT_PUBLIC_API_URL`**, **`GOOGLE_*`**.
+
+---
+
+## 7. Celery / background workers
+
+**Celery does not run** inside Vercel’s FastAPI deployment. Run workers on:
+
+- Railway / Render / Fly / a VPS with the **`backend/Dockerfile`** (or Celery CMD),  
+  same **`REDIS_URL`** and **`DATABASE_URL`**.
+
+---
+
+## 8. CLI (optional)
 
 ```bash
 npm i -g vercel
 
-cd frontend && vercel link && vercel --prod
-cd backend && vercel link && vercel --prod
+cd backend && vercel link   # attach to API project
+vercel --prod
+
+cd frontend && vercel link  # attach to Web project
+vercel --prod
 ```
 
-Use **separate** `vercel link` mappings so each directory attaches to the correct Vercel project.
+Each directory gets its **own** linked project.
+
+---
+
+## 9. Troubleshooting
+
+| Issue | Action |
+|--------|--------|
+| **Python install / build too large** | Trim optional deps or move API to [Render](./render-vercel.md) Docker. |
+| **Import errors on Vercel** | Confirm **Root Directory** is **`backend`**, **`entrypoint`** = **`app.main:app`**. |
+| **Timeouts on chat/stream** | Raise **Function Max Duration** in Vercel **Settings → Functions**, and **`backend/vercel.json`**; Pro plan higher caps ([limits](https://vercel.com/docs/functions/limitations)). |
+| **CORS errors** | Fix **`CORS_ORIGINS`**; redeploy API. |
+| **Database errors** | Verify **`postgresql+asyncpg://`** scheme; some hosts require SSL query params (`?ssl=require`) — see provider docs. |
+
+---
+
+## Prefer the API on Render instead?
+
+Heavy stacks often deploy more reliably under Docker: **[docs/render-vercel.md](./render-vercel.md)** and repo root **`render.yaml`**.

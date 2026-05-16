@@ -1,6 +1,6 @@
 # Backend on Render · Frontend on Vercel
 
-> **Full end-to-end checklist:** [DEPLOYMENT.md](./DEPLOYMENT.md)
+> **Both apps on Vercel instead:** [vercel.md](./vercel.md)
 
 This split fits this repo well: **Render** runs the Dockerized FastAPI app (heavy deps, long requests, Celery-friendly host options), while **Vercel** hosts the Next.js frontend.
 
