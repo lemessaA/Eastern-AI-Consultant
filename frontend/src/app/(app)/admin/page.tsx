@@ -1,22 +1,11 @@
 "use client";
 
 import * as React from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { BookOpen, Briefcase, MessageSquare, TrendingUp, Users } from "lucide-react";
+import dynamic from "next/dynamic";
+import { BookOpen, MessageSquare, TrendingUp, Users } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import type { AdminChartsProps } from "@/components/admin/charts";
 import { api } from "@/lib/api";
 
 interface Stats {
@@ -29,7 +18,18 @@ interface Stats {
   roles: Record<string, number>;
 }
 
-const COLORS = ["hsl(258 90% 56%)", "hsl(24 95% 53%)", "hsl(189 94% 43%)", "hsl(142 71% 45%)", "hsl(38 92% 50%)"];
+const AdminCharts = dynamic(() => import("@/components/admin/charts").then((m) => ({ default: m.AdminCharts })), {
+  loading: () => (
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="h-[22rem] animate-pulse rounded-xl bg-muted/40 ring-1 ring-border/50" aria-hidden />
+        <div className="h-[22rem] animate-pulse rounded-xl bg-muted/40 ring-1 ring-border/50" aria-hidden />
+      </div>
+      <div className="h-40 animate-pulse rounded-xl bg-muted/40 ring-1 ring-border/50" aria-hidden />
+    </div>
+  ),
+  ssr: false,
+});
 
 export default function AdminPage() {
   const [stats, setStats] = React.useState<Stats | null>(null);
@@ -42,8 +42,14 @@ export default function AdminPage() {
     return <p className="text-muted-foreground">Loading admin metrics…</p>;
   }
 
-  const langData = Object.entries(stats.languages).map(([name, value]) => ({ name, value }));
-  const roleData = Object.entries(stats.roles).map(([name, value]) => ({ name, value }));
+  const langData: AdminChartsProps["langData"] = Object.entries(stats.languages).map(([name, value]) => ({
+    name,
+    value,
+  }));
+  const roleData: AdminChartsProps["roleData"] = Object.entries(stats.roles).map(([name, value]) => ({
+    name,
+    value,
+  }));
 
   const tiles = [
     { label: "Users", value: stats.users, icon: Users },
@@ -74,71 +80,7 @@ export default function AdminPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Users by language</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={langData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  paddingAngle={2}
-                >
-                  {langData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Users by role</CardTitle>
-          </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={roleData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" fontSize={11} />
-                <YAxis fontSize={11} />
-                <Tooltip />
-                <Bar dataKey="value" fill="hsl(258 90% 56%)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" /> Quick actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-3">
-          <a href="/admin/users" className="rounded-lg border border-border p-4 hover:bg-muted/40 transition">
-            Manage users
-          </a>
-          <a href="/admin/courses" className="rounded-lg border border-border p-4 hover:bg-muted/40 transition">
-            Manage courses
-          </a>
-          <a href="/admin/announcements" className="rounded-lg border border-border p-4 hover:bg-muted/40 transition">
-            Send announcement
-          </a>
-        </CardContent>
-      </Card>
+      <AdminCharts langData={langData} roleData={roleData} />
     </div>
   );
 }
