@@ -34,12 +34,14 @@ export default function ForgotPasswordPage() {
       <div className="space-y-2 text-center">
         <h1 className="font-display text-3xl font-bold">Reset your password</h1>
         <p className="text-sm text-muted-foreground">
-          We'll email you a link to set a new password.
+          {"We'll email you a link to set a new password."}
         </p>
       </div>
       {sent ? (
         <p className="rounded-lg border border-success/40 bg-success/5 p-4 text-sm">
-          Check your inbox. If you don't see it within 5 minutes, check your spam folder.
+          {
+            "Check your inbox. If you don't see it within 5 minutes, check your spam folder."
+          }
         </p>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">

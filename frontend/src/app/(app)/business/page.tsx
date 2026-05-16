@@ -268,7 +268,7 @@ export default function BusinessPage() {
               )}
               {!analyzing && !analysis && (
                 <p className="text-sm text-muted-foreground">
-                  Click "Generate report" to run the full multi-agent workflow on your business profile.
+                  {'Click "Generate report" to run the full multi-agent workflow on your business profile.'}
                 </p>
               )}
             </CardContent>

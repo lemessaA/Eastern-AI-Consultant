@@ -39,8 +39,9 @@ export function AgentsShowcase() {
             One platform. Ten experts. Always-on.
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Each agent is fine-tuned with domain knowledge for African contexts — from teff farming to
-            WhatsApp commerce. Powered by Groq's sub-second inference and orchestrated through LangGraph.
+            {
+              "Each agent is fine-tuned with domain knowledge for African contexts — from teff farming to WhatsApp commerce. Powered by Groq's sub-second inference and orchestrated through LangGraph."
+            }
           </p>
         </div>
 

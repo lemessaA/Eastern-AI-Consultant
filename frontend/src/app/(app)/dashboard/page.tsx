@@ -106,7 +106,7 @@ export default function DashboardPage() {
             {t("dashboard.welcome", { name: firstName })}
           </p>
           <h1 className="font-display text-3xl font-bold tracking-tight">
-            Let's build something with AI today.
+            {"Let's build something with AI today."}
           </h1>
         </div>
         <Link href="/chat">

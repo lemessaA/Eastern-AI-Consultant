@@ -92,7 +92,7 @@ export default function CourseDetailPage() {
 
             {course.learning_outcomes.length > 0 && (
               <section>
-                <h2 className="font-display text-xl font-semibold">You'll learn</h2>
+                <h2 className="font-display text-xl font-semibold">{"You'll learn"}</h2>
                 <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                   {course.learning_outcomes.map((o) => (
                     <li key={o} className="flex items-start gap-2 text-sm">
@@ -143,7 +143,7 @@ export default function CourseDetailPage() {
 
               {enrolled ? (
                 <>
-                  <p className="text-sm text-success font-medium">You're enrolled ✓</p>
+                  <p className="text-sm text-success font-medium">{"You're enrolled ✓"}</p>
                   <Progress value={0} />
                   <Button variant="gradient" className="w-full" size="lg">
                     Start lesson 1

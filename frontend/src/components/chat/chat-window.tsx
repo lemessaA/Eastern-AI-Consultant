@@ -330,7 +330,9 @@ export function ChatWindow({
                 Hello {user?.full_name?.split(" ")[0] ?? "there"} 👋
               </h2>
               <p className="mt-2 text-muted-foreground max-w-md">
-                Ask me anything — in English, Amharic, Afaan Oromo or Af-Soomaali. I'll pick the right specialist for you automatically.
+                {
+                  "Ask me anything — in English, Amharic, Afaan Oromo or Af-Soomaali. I'll pick the right specialist for you automatically."
+                }
               </p>
               <div className="mt-8 grid w-full max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
                 {suggestions.map((s) => (
