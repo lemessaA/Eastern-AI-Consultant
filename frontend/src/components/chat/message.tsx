@@ -75,4 +75,4 @@ function ChatMessageImpl({
   );
 }
 
-export const ChatMessage = React.memo(ChatMessageImpl);
+export const ChatMessage = memo(ChatMessageImpl);
