@@ -95,13 +95,18 @@ async def _answer_node(state: ChatState) -> dict[str, Any]:
 
 
 def build_chat_graph() -> Any:
-    """Compile and return the LangGraph workflow."""
+    """Compile and return the LangGraph workflow.
+
+    Node names use a ``_step`` suffix so they never clash with state keys
+    such as ``answer`` or ``agent_type`` (LangGraph treats both as a single
+    namespace and refuses overlapping names).
+    """
     graph: StateGraph = StateGraph(ChatState)
-    graph.add_node("classify", _classify_node)
-    graph.add_node("answer", _answer_node)
-    graph.add_edge(START, "classify")
-    graph.add_edge("classify", "answer")
-    graph.add_edge("answer", END)
+    graph.add_node("classify_step", _classify_node)
+    graph.add_node("answer_step", _answer_node)
+    graph.add_edge(START, "classify_step")
+    graph.add_edge("classify_step", "answer_step")
+    graph.add_edge("answer_step", END)
     return graph.compile()
 
 

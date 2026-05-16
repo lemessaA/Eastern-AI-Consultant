@@ -115,19 +115,25 @@ async def _synthesize(state: AnalysisState) -> dict[str, Any]:
 
 
 def _build_graph() -> Any:
-    graph: StateGraph = StateGraph(AnalysisState)
-    graph.add_node("diagnose", _diagnose)
-    graph.add_node("swot", _swot)
-    graph.add_node("automate", _automation)
-    graph.add_node("market", _marketing)
-    graph.add_node("synthesize", _synthesize)
+    """Wire the multi-agent workflow.
 
-    graph.add_edge(START, "diagnose")
-    graph.add_edge("diagnose", "swot")
-    graph.add_edge("swot", "automate")
-    graph.add_edge("automate", "market")
-    graph.add_edge("market", "synthesize")
-    graph.add_edge("synthesize", END)
+    Node names are deliberately distinct from :class:`AnalysisState` keys —
+    LangGraph 0.2.53+ uses the same namespace for both and rejects collisions
+    (e.g. node ``"swot"`` would clash with state key ``swot``).
+    """
+    graph: StateGraph = StateGraph(AnalysisState)
+    graph.add_node("diagnose_step", _diagnose)
+    graph.add_node("swot_step", _swot)
+    graph.add_node("automation_step", _automation)
+    graph.add_node("marketing_step", _marketing)
+    graph.add_node("synthesize_step", _synthesize)
+
+    graph.add_edge(START, "diagnose_step")
+    graph.add_edge("diagnose_step", "swot_step")
+    graph.add_edge("swot_step", "automation_step")
+    graph.add_edge("automation_step", "marketing_step")
+    graph.add_edge("marketing_step", "synthesize_step")
+    graph.add_edge("synthesize_step", END)
     return graph.compile()
 
 
