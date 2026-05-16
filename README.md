@@ -113,6 +113,12 @@ Open <http://localhost:3000>.
 
 ---
 
+## ☁️ Vercel (two projects)
+
+Deploy the frontend and API as **separate Vercel projects** from this repo (`Root Directory`: `frontend` or `backend`). See **[docs/vercel.md](docs/vercel.md)** for environment variables, CORS wiring, and serverless limits.
+
+---
+
 ## 🔑 Environment variables (highlights)
 
 | Variable                          | Purpose                                            |
