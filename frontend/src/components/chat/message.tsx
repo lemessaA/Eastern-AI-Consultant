@@ -1,10 +1,12 @@
 "use client";
 
+import { memo } from "react";
+
 import { Bot, User } from "lucide-react";
 
 import { ChatMarkdown } from "@/components/chat/markdown";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { cn, initials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 import { AGENTS, type AgentDef } from "@/components/chat/agent-picker";
 
@@ -72,3 +74,5 @@ function ChatMessageImpl({
     </div>
   );
 }
+
+export const ChatMessage = React.memo(ChatMessageImpl);
