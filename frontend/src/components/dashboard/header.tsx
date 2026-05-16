@@ -37,7 +37,7 @@ export function DashboardHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="flex h-full flex-col p-0">
-          <div className="flex h-16 items-center border-b border-border px-4">
+          <div className="flex h-16 items-center border-b border-border pr-14 pl-4">
             <Logo href="/dashboard" responsiveBrand onClick={() => setMobileNavOpen(false)} />
           </div>
           <DashboardNavContent onNavigate={() => setMobileNavOpen(false)} />
