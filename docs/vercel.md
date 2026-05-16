@@ -52,7 +52,7 @@ entrypoint = "app.main:app"
 
 6. **`CORS_ORIGINS` note:** Until the frontend exists, you can skip or use a placeholder, then update when the frontend project gets its `.vercel.app` URL and **Redeploy** the API.
 
-7. **Ephemeral filesystem:** avoid relying on **`local`** disk for durable uploads/RAG paths. Prefer **`cloudinary`** or **`s3`** (`STORAGE_BACKEND` + credentials). **`backend/vercel.json`** sets **`maxDuration`** so long‑running/streaming handlers can run longer (streaming still consumes function duration — see **[max duration docs](https://vercel.com/docs/functions/configuring-functions/duration)** and raise limits in Dashboard if needed).
+7. **Ephemeral filesystem:** avoid relying on **`local`** disk for durable uploads/RAG paths. Prefer **`cloudinary`** or **`s3`** (`STORAGE_BACKEND` + credentials). **Do not** put `functions` glob patterns targeting `app/**/*.py` in **`vercel.json`** — they fail the build (“doesn't match … inside the `api` directory”). Framework FastAPI uses **`[tool.vercel]`** instead. For **streaming / LLM timeouts**, raise **Function Max Duration** under **Project → Settings → Functions** ([duration docs](https://vercel.com/docs/functions/configuring-functions/duration)).
 
 8. **Deploy.**
 
@@ -168,7 +168,7 @@ Each directory gets its **own** linked project.
 |--------|--------|
 | **Python install / build too large** | Trim optional deps or move API to [Render](./render-vercel.md) Docker. |
 | **Import errors on Vercel** | Confirm **Root Directory** is **`backend`**, **`entrypoint`** = **`app.main:app`**. |
-| **Timeouts on chat/stream** | Raise **Function Max Duration** in Vercel **Settings → Functions**, and **`backend/vercel.json`**; Pro plan higher caps ([limits](https://vercel.com/docs/functions/limitations)). |
+| **Timeouts on chat/stream** | **Settings → Functions** → **Max Duration**. Avoid invalid `functions` globs on framework FastAPI. Pro caps: [limits](https://vercel.com/docs/functions/limitations). |
 | **CORS errors** | Fix **`CORS_ORIGINS`**; redeploy API. |
 | **Database errors** | Verify **`postgresql+asyncpg://`** scheme; some hosts require SSL query params (`?ssl=require`) — see provider docs. |
 
