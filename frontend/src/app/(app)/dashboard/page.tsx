@@ -5,9 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BookOpen,
-  Bot,
   Briefcase,
-  Inbox,
   MessageSquare,
   Sparkles,
   Workflow,
@@ -343,6 +341,3 @@ function EmptyState({
     </div>
   );
 }
-
-// Re-export so other pages can detect emptiness consistently.
-export const _DashboardPrimitives = { Inbox, Bot };
