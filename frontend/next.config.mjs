@@ -10,6 +10,13 @@ const nextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
+  /** Avoid PackFileCacheStrategy ENOENT cascades without disabling cache entirely (faster than `cache: false`). */
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = { type: "memory" };
+    }
+    return config;
+  },
   async headers() {
     return [
       {
