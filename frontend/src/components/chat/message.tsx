@@ -16,7 +16,7 @@ export interface MessageData {
   pending?: boolean;
 }
 
-export function ChatMessage({
+function ChatMessageImpl({
   message,
   userName,
 }: {
