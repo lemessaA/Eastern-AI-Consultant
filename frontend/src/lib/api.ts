@@ -48,10 +48,24 @@ async function request<T = unknown>(path: string, opts: RequestOptions = {}): Pr
     } catch {
       detail = await res.text();
     }
-    const message =
-      typeof detail === "object" && detail && "detail" in detail
-        ? String((detail as { detail: unknown }).detail)
-        : res.statusText;
+
+    // Extract a human-friendly message:
+    //   - 422 from FastAPI ⇒ { detail, errors: [{ loc, msg, ... }] }
+    //   - other ⇒ { detail: "…" } or plain text
+    let message = res.statusText;
+    if (detail && typeof detail === "object") {
+      const d = detail as { detail?: unknown; errors?: Array<{ loc?: unknown[]; msg?: string }> };
+      if (Array.isArray(d.errors) && d.errors.length > 0) {
+        const first = d.errors[0];
+        const field = Array.isArray(first.loc)
+          ? first.loc.filter((p) => p !== "body").join(".")
+          : "";
+        message = field ? `${field}: ${first.msg}` : (first.msg ?? message);
+      } else if (typeof d.detail === "string") {
+        message = d.detail;
+      }
+    }
+
     if (res.status === 401) {
       useAuthStore.getState().clear();
     }

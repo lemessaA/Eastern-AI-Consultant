@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api } from "@/lib/api";
+import { api, APIError } from "@/lib/api";
 import type { LangCode } from "@/types";
 import { useLanguageStore } from "@/store/language";
 
@@ -67,8 +67,9 @@ export default function BusinessPage() {
       setActive(created);
       (e.target as HTMLFormElement).reset();
       toast.success("Business profile created.");
-    } catch {
-      toast.error("Could not create business.");
+    } catch (err) {
+      const msg = err instanceof APIError ? err.message : "Could not create business.";
+      toast.error(msg);
     } finally {
       setCreating(false);
     }
@@ -97,8 +98,9 @@ export default function BusinessPage() {
       });
       setAnalysis(out);
       toast.success("Analysis complete.");
-    } catch {
-      toast.error("Analysis failed.");
+    } catch (err) {
+      const msg = err instanceof APIError ? err.message : "Analysis failed.";
+      toast.error(msg);
     } finally {
       setAnalyzing(false);
     }

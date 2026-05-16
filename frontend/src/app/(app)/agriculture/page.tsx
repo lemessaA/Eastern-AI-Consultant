@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api";
+import { api, APIError } from "@/lib/api";
 
 export default function AgriculturePage() {
   return (
@@ -68,8 +68,9 @@ function CropAdvice() {
         language: "en",
       });
       setResult(out.recommendation);
-    } catch {
-      toast.error("Could not get crop advice.");
+    } catch (err) {
+      const msg = err instanceof APIError ? err.message : "Could not get crop advice.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -134,8 +135,9 @@ function PestDiagnosis() {
         language: "en",
       });
       setResult(out.diagnosis);
-    } catch {
-      toast.error("Could not analyse.");
+    } catch (err) {
+      const msg = err instanceof APIError ? err.message : "Could not analyse.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -155,11 +157,18 @@ function PestDiagnosis() {
             <Input id="crop" name="crop" required placeholder="Coffee, Teff, Sorghum…" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="symptoms">Symptoms</Label>
+            <Label htmlFor="symptoms">
+              Symptoms
+              <span className="ml-1 text-xs font-normal text-muted-foreground">
+                (at least 10 characters)
+              </span>
+            </Label>
             <Textarea
               id="symptoms"
               name="symptoms"
               required
+              minLength={10}
+              maxLength={2000}
               rows={4}
               placeholder="Yellowing of older leaves, dark spots, wilting after watering…"
             />
@@ -246,8 +255,9 @@ function Weather() {
         longitude: Number(fd.get("lon")),
       });
       setData(out);
-    } catch {
-      toast.error("Weather service unavailable.");
+    } catch (err) {
+      const msg = err instanceof APIError ? err.message : "Weather service unavailable.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

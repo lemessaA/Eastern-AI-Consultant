@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api";
+import { api, APIError } from "@/lib/api";
 
 interface Template {
   key: string;
@@ -42,8 +42,9 @@ export default function AutomationPage() {
       });
       setBlueprint(out.blueprint);
       toast.success("Workflow blueprint ready.");
-    } catch {
-      toast.error("Could not generate workflow.");
+    } catch (err) {
+      const msg = err instanceof APIError ? err.message : "Could not generate workflow.";
+      toast.error(msg);
     } finally {
       setGenerating(false);
     }

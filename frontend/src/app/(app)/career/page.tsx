@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api";
+import { api, APIError } from "@/lib/api";
 
 export default function CareerPage() {
   return (
@@ -83,8 +83,9 @@ function GenericForm({
     try {
       const out = await api.post<Record<string, string>>(endpoint, body);
       setResult(out[resultKey]);
-    } catch {
-      toast.error("AI service unavailable.");
+    } catch (err) {
+      const msg = err instanceof APIError ? err.message : "AI service unavailable.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
