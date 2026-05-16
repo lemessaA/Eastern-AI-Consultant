@@ -53,14 +53,32 @@ export function Footer() {
               <ThemeToggle />
             </div>
             <div className="flex items-center gap-3 pt-2">
-              <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-foreground">
-                <Twitter className="h-4 w-4" />
-              </a>
-              <a href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-foreground">
+              <a
+                href="https://www.linkedin.com/in/lemessa-ahmed-765476332"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn — Lemessa Ahmed"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Linkedin className="h-4 w-4" />
               </a>
-              <a href="#" aria-label="GitHub" className="text-muted-foreground hover:text-foreground">
+              <a
+                href="https://github.com/lemessaA"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub — lemessaA"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Github className="h-4 w-4" />
+              </a>
+              <a
+                href="https://x.com/lemikind"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X (Twitter) — @lemikind"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Twitter className="h-4 w-4" />
               </a>
             </div>
           </div>
