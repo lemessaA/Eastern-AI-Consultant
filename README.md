@@ -113,9 +113,12 @@ Open <http://localhost:3000>.
 
 ---
 
-## ☁️ Vercel (two projects)
+## ☁️ Vercel · Render
 
-Deploy the frontend and API as **separate Vercel projects** from this repo (`Root Directory`: `frontend` or `backend`). See **[docs/vercel.md](docs/vercel.md)** for environment variables, CORS wiring, and serverless limits.
+| Setup | Doc |
+|--------|-----|
+| **Frontend on Vercel + FastAPI on Vercel** (two projects, `frontend` / `backend` roots) | [`docs/vercel.md`](docs/vercel.md) |
+| **Frontend on Vercel + FastAPI on Render (Docker)** _(works well for this stack)_ | [`docs/render-vercel.md`](docs/render-vercel.md) — [`render.yaml`](render.yaml) at repo root |
 
 ---
 
@@ -187,12 +190,14 @@ cd frontend && npm run typecheck && npm run lint
 
 ## 📦 Deploying to production
 
-- **Vercel** for `frontend/` — set `NEXT_PUBLIC_API_URL` to your backend URL.
-- **Railway / Fly / AWS ECS** for `backend/` (FastAPI + Celery + Postgres + Redis).
-- **Cloudflare / Fastly** in front for CDN + low-bandwidth optimisation.
+- **Frontend:** **Vercel** for `frontend/` — `NEXT_PUBLIC_API_URL` → your API origin.
+- **Backend:** **Render** (`render.yaml`) or **Railway / Fly / AWS ECS** for Dockerized FastAPI + Postgres + Redis; add Celery workers where needed.
+- **CDN / edge:** Cloudflare / Fastly in front for static assets + low-bandwidth optimisation.
 
 The shipped `docker-compose.yml` is production-ready: healthchecks on every
 service, volumes for Postgres / Redis / uploads / Chroma, and Nginx in front.
+
+See **[docs/render-vercel.md](docs/render-vercel.md)** for Render + Vercel together.
 
 ---
 

@@ -1,0 +1,55 @@
+# Render Blueprint — FastAPI API only (Docker).
+# Frontend: deploy separately on Vercel (`frontend/`, NEXT_PUBLIC_API_URL → this URL).
+#
+# Dashboard → Blueprints → New Blueprint → connect repo, or attach this file when creating a Web Service.
+# Add all secrets below in the Render dashboard after first deploy.
+
+services:
+  - type: web
+    name: eastern-ai-api
+    runtime: docker
+    plan: starter
+    region: virginia # change to Frankfurt / Oregon, etc., as needed
+
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+
+    healthCheckPath: /api/v1/health
+
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      # Set in dashboard (Secrets) — sync: false avoids overwriting manual values on blueprint sync
+      - key: DATABASE_URL
+        sync: false
+      - key: SYNC_DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      # Storage — use cloudinary/s3 or accept ephemeral disk; see docs/render-vercel.md
+      - key: STORAGE_BACKEND
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: VECTOR_STORE_PATH
+        value: /tmp/chroma_db
+      - key: UPLOAD_DIR
+        value: /tmp/uploads

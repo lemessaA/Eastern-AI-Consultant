@@ -4,6 +4,8 @@ Use **two Vercel projects** from the same Git repository, each with a different 
 
 Official reference: [Deploy a FastAPI app on Vercel](https://vercel.com/docs/frameworks/backend/fastapi) and [Next.js on Vercel](https://vercel.com/docs/frameworks/nextjs).
 
+> **Prefer the API on Render?** Heavy Python stacks often fit better there; keep only the frontend on Vercel and follow **[docs/render-vercel.md](./render-vercel.md)** (`render.yaml` at repo root).
+
 ---
 
 ## 1. Frontend (Next.js)
