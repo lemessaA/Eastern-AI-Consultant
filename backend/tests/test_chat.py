@@ -30,10 +30,10 @@ async def test_stream_requires_auth(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_upload_requires_auth(client: AsyncClient):
     res = await client.post(
-      "/api/v1/chat/upload",
-      files={"file": ("note.txt", b"Sample document text for chat.", "text/plain")},
-  )
-  assert res.status_code == 401
+        "/api/v1/chat/upload",
+        files={"file": ("note.txt", b"Sample document text for chat.", "text/plain")},
+    )
+    assert res.status_code == 401
 
 
 @pytest.mark.asyncio
