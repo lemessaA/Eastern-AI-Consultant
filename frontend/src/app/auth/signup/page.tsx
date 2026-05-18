@@ -99,7 +99,9 @@ export default function SignupPage() {
         </div>
       </div>
 
-      <GoogleSignInButton />
+      <Suspense fallback={null}>
+        <GoogleSignInButton />
+      </Suspense>
 
       <p className="text-center text-sm text-muted-foreground">
         {t("auth.haveAccount")}{" "}
