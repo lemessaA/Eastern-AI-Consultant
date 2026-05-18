@@ -426,7 +426,36 @@ export function ChatWindow({
         </div>
 
         {/* Composer */}
-        <div className="border-t border-border p-3 sm:p-4">
+        <motion className="border-t border-border p-3 sm:p-4">
+          {attachments.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2">
+              {attachments.map((a) => (
+                <span
+                  key={`${a.filename}-${a.size_bytes}`}
+                  className="inline-flex max-w-full items-center gap-1 rounded-full border border-border bg-muted px-2 py-1 text-xs"
+                >
+                  <Paperclip className="h-3 w-3 shrink-0 opacity-60" />
+                  <span className="truncate">{a.filename}</span>
+                  <button
+                    type="button"
+                    className="rounded-full p-0.5 hover:bg-background"
+                    aria-label={`Remove ${a.filename}`}
+                    onClick={() => removeAttachment(a.filename)}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept={CHAT_FILE_ACCEPT}
+            multiple
+            onChange={(e) => uploadFiles(e.target.files)}
+          />
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -439,7 +468,8 @@ export function ChatWindow({
               variant="ghost"
               size="icon"
               aria-label={t("chat.attachFile")}
-              disabled
+              disabled={streaming || uploading}
+              onClick={() => fileInputRef.current?.click()}
             >
               <Paperclip className="h-4 w-4" />
             </Button>
@@ -475,7 +505,7 @@ export function ChatWindow({
                 variant="gradient"
                 size="icon"
                 aria-label={t("chat.send")}
-                disabled={!input.trim()}
+                disabled={!input.trim() && attachments.length === 0}
               >
                 <Send className="h-4 w-4" />
               </Button>
