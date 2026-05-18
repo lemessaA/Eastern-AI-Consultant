@@ -10,12 +10,17 @@ import { cn } from "@/lib/utils";
 
 import { AGENTS, type AgentDef } from "@/components/chat/agent-picker";
 
+export interface MessageAttachment {
+  filename: string;
+}
+
 export interface MessageData {
   id?: string;
   role: "user" | "assistant" | "system";
   content: string;
   agent?: string | null;
   pending?: boolean;
+  attachments?: MessageAttachment[];
 }
 
 function ChatMessageImpl({
@@ -64,7 +69,20 @@ function ChatMessageImpl({
           {message.role === "assistant" ? (
             <ChatMarkdown content={message.content} />
           ) : (
-            <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+            <>
+              {message.attachments && message.attachments.length > 0 && (
+                <ul className="mb-2 space-y-1 text-xs opacity-90">
+                  {message.attachments.map((a) => (
+                    <li key={a.filename} className="truncate">
+                      📎 {a.filename}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {message.content ? (
+                <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              ) : null}
+            </>
           )}
           {message.pending && (
             <span className="ml-1 inline-block h-3 w-2 align-middle bg-current animate-blink" />

@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 
@@ -18,18 +18,43 @@ from app.core.logging import get_logger
 from app.langgraph.chat_router import classify_agent
 from app.models.chat import Conversation, Message
 from app.models.enums import AgentType, Language, MessageRole
+from app.core.config import settings
 from app.schemas.chat import (
+    ChatAttachmentUploadResponse,
     ChatStreamRequest,
     ConversationCreate,
     ConversationDetailRead,
     ConversationRead,
     MessageRead,
 )
+from app.services.documents import extract_text_from_bytes
 from app.schemas.common import MessageResponse
 from app.services.rag import get_rag_service
 
 router = APIRouter()
 logger = get_logger(__name__)
+
+_CHAT_ALLOWED_SUFFIXES = {".pdf", ".txt", ".csv", ".md", ".doc", ".docx"}
+_MAX_ATTACHMENT_TEXT_CHARS = 50_000
+
+
+def _augment_message_with_attachments(
+    message: str, attachments: list[dict[str, Any]] | None
+) -> str:
+    """Append extracted file text so the model can reason over uploads."""
+    parts: list[str] = []
+    if message.strip():
+        parts.append(message.strip())
+    for att in attachments or []:
+        text = (att.get("extracted_text") or "").strip()
+        if not text:
+            continue
+        name = att.get("filename") or "attachment"
+        snippet = text[:_MAX_ATTACHMENT_TEXT_CHARS]
+        parts.append(f"--- Attached file: {name} ---\n{snippet}")
+    if not parts:
+        return message.strip() or "Please review the attached file(s)."
+    return "\n\n".join(parts)
 
 
 # ---------- Agents directory ------------------------------------------------
@@ -123,6 +148,43 @@ async def delete_conversation(
     return MessageResponse(message="Conversation deleted")
 
 
+# ---------- File upload for chat --------------------------------------------
+@router.post("/upload", response_model=ChatAttachmentUploadResponse)
+async def upload_chat_attachment(
+    user: CurrentUser,
+    file: UploadFile = File(...),
+) -> ChatAttachmentUploadResponse:
+    """Extract text from a chat attachment (PDF, DOCX, TXT, CSV, MD)."""
+    _ = user  # auth gate only
+    filename = file.filename or "upload"
+    suffix = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if suffix not in _CHAT_ALLOWED_SUFFIXES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type. Allowed: {', '.join(sorted(_CHAT_ALLOWED_SUFFIXES))}",
+        )
+
+    data = await file.read()
+    max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    if len(data) > max_bytes:
+        raise HTTPException(status_code=413, detail="File too large")
+
+    mime = file.content_type or "application/octet-stream"
+    extracted = extract_text_from_bytes(data, mime, filename).strip()
+    if not extracted:
+        raise HTTPException(
+            status_code=422,
+            detail="Could not extract text from this file. Try PDF, DOCX, TXT, CSV, or MD.",
+        )
+
+    return ChatAttachmentUploadResponse(
+        filename=filename,
+        mime_type=mime,
+        size_bytes=len(data),
+        extracted_text=extracted[:_MAX_ATTACHMENT_TEXT_CHARS],
+    )
+
+
 # ---------- Streaming chat --------------------------------------------------
 async def _build_history(
     db, conversation_id: uuid.UUID, limit: int = 20
@@ -160,15 +222,24 @@ async def _stream_response(
             user_id=user_id,
             agent_type=request.agent_type,
             language=request.language,
-            title=request.message[:60],
+            title=(request.message[:60] if request.message.strip() else None)
+            or (
+                (request.attachments or [{}])[0].get("filename", "New conversation")[:60]
+                if request.attachments
+                else "New conversation"
+            ),
         )
         db.add(convo)
         await db.flush()
 
+    effective_message = _augment_message_with_attachments(
+        request.message, request.attachments
+    )
+
     # Route to the right specialist via LangGraph classifier when the user has
     # not explicitly picked an agent; otherwise honour their choice.
     forced = request.agent_type
-    agent_type = await classify_agent(request.message, forced=forced)
+    agent_type = await classify_agent(effective_message, forced=forced)
     convo.agent_type = agent_type
     agent = get_agent(agent_type)
 
@@ -187,7 +258,7 @@ async def _stream_response(
     # Optional RAG context.
     rag_context = ""
     if request.use_rag:
-        rag_context = await get_rag_service().query_as_context(request.message, k=4)
+        rag_context = await get_rag_service().query_as_context(effective_message, k=4)
 
     context: dict[str, Any] = {"rag": rag_context} if rag_context else {}
     yield _sse_event(
@@ -204,7 +275,7 @@ async def _stream_response(
     collected: list[str] = []
     try:
         async for chunk in agent.stream(
-            request.message,
+            effective_message,
             history=history,
             language=request.language,
             context=context,

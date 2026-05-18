@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Mic, Paperclip, Send, Sparkles, Square, ChevronDown, Volume2 } from "lucide-react";
+import { Mic, Paperclip, Send, Sparkles, Square, ChevronDown, Volume2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { AGENTS, AgentPicker } from "@/components/chat/agent-picker";
@@ -20,10 +20,19 @@ import { useAuthStore } from "@/store/auth";
 import { api, API_BASE } from "@/lib/api";
 import type { AgentType, ChatMessage as ChatMessageType, Conversation } from "@/types";
 
+interface ChatAttachment {
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  extracted_text: string;
+}
+
 interface ChatWindowProps {
   initialAgent?: AgentType;
   initialConversationId?: string | null;
 }
+
+const CHAT_FILE_ACCEPT = ".pdf,.txt,.csv,.md,.doc,.docx";
 
 export function ChatWindow({
   initialAgent = "teacher",
@@ -38,8 +47,11 @@ export function ChatWindow({
   const [input, setInput] = React.useState("");
   const [conversationId, setConversationId] = React.useState<string | null>(initialConversationId);
   const [streaming, setStreaming] = React.useState(false);
+  const [attachments, setAttachments] = React.useState<ChatAttachment[]>([]);
+  const [uploading, setUploading] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
   const endRef = React.useRef<HTMLDivElement | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // Hydrate from an existing conversation when navigated to via /chat?conversation=<id>.
   React.useEffect(() => {
@@ -118,12 +130,51 @@ export function ChatWindow({
     window.speechSynthesis.speak(utter);
   }
 
+  async function uploadFiles(fileList: FileList | null) {
+    if (!fileList?.length || uploading) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(fileList)) {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(`${API_BASE}/chat/upload`, {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: form,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          const detail = (err as { detail?: string }).detail;
+          toast.error(typeof detail === "string" ? detail : `Could not upload ${file.name}`);
+          continue;
+        }
+        const meta = (await res.json()) as ChatAttachment;
+        setAttachments((prev) => [...prev, meta]);
+      }
+    } catch {
+      toast.error("File upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function removeAttachment(filename: string) {
+    setAttachments((prev) => prev.filter((a) => a.filename !== filename));
+  }
+
   // --- Streaming submit ---
   async function send(forced?: string) {
     const message = (forced ?? input).trim();
-    if (!message || streaming) return;
+    const pendingAttachments = [...attachments];
+    const canSend = message.length > 0 || pendingAttachments.length > 0;
+    if (!canSend || streaming) return;
 
-    const userMsg: MessageData = { role: "user", content: message };
+    const userMsg: MessageData = {
+      role: "user",
+      content: message,
+      attachments: pendingAttachments.map((a) => ({ filename: a.filename })),
+    };
     const assistantMsg: MessageData = {
       role: "assistant",
       content: "",
