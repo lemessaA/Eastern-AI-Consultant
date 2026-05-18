@@ -64,7 +64,7 @@ function LoginFormInner() {
 
   return (
     <AuthFormCard>
-    <motion className="space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2 text-center">
         <h1 className="font-display text-3xl font-bold tracking-tight">{t("auth.signInTitle")}</h1>
         <p className="text-sm text-muted-foreground">{t("auth.signInSubtitle")}</p>
