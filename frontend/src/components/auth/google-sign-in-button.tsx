@@ -14,7 +14,6 @@ import { useAuthStore } from "@/store/auth";
 import type { TokenResponse } from "@/types";
 
 interface GoogleSignInButtonProps {
-  /** Where to send the user after a successful sign-in. */
   redirectTo?: string;
 }
 
@@ -73,17 +72,16 @@ export function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
       <Button variant="outline" size="lg" className="w-full" disabled title="Set NEXT_PUBLIC_GOOGLE_CLIENT_ID">
         <GoogleIcon />
         {t("auth.google")}
-        <span className="sr-only"> (not configured)</span>
       </Button>
     );
   }
 
   return (
-    <motion ref={containerRef} className="relative w-full min-h-[44px]">
+    <div ref={containerRef} className="relative w-full min-h-[44px]">
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/80">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
-        </motion>
+        </div>
       )}
       <div className={loading ? "pointer-events-none opacity-60" : ""}>
         <GoogleLogin
@@ -98,7 +96,7 @@ export function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
           locale={locale === "am" ? "am" : locale === "om" ? "om" : locale === "so" ? "so" : "en"}
         />
       </div>
-    </motion>
+    </div>
   );
 }
 

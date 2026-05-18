@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AuthShell } from "@/app/auth/auth-shell";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
