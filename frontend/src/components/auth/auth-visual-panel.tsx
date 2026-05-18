@@ -75,7 +75,11 @@ export function AuthVisualPanel() {
       </motion.div>
 
       <div className="relative z-10 flex h-full flex-col p-10 xl:p-12">
-        <Logo className="text-white drop-shadow-sm [&_span]:text-white" />
+        <Logo
+          showText
+          responsiveBrand
+          className="text-white drop-shadow-sm [&_span]:text-white [&_.text-muted-foreground]:text-white/60"
+        />
 
         <div className="mt-auto max-w-lg space-y-8 pb-4">
           <motion.div
@@ -112,7 +116,7 @@ export function AuthVisualPanel() {
                 className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl"
               >
                 <Icon className="mb-2 h-4 w-4 text-violet-200" aria-hidden />
-                <motion className="font-display text-2xl font-bold text-white">{value}</div>
+                <p className="font-display text-2xl font-bold text-white">{value}</p>
                 <div className="text-xs text-white/60">{label}</div>
               </div>
             ))}

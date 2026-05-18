@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AuthFormCard } from "@/components/auth/auth-form-card";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,9 +63,10 @@ function LoginFormInner() {
   }
 
   return (
-    <div className="space-y-6">
+    <AuthFormCard>
+    <motion className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="font-display text-3xl font-bold">{t("auth.signInTitle")}</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">{t("auth.signInTitle")}</h1>
         <p className="text-sm text-muted-foreground">{t("auth.signInSubtitle")}</p>
       </div>
 
@@ -121,7 +123,8 @@ function LoginFormInner() {
           {t("auth.signUp")}
         </Link>
       </p>
-    </div>
+      </div>
+    </AuthFormCard>
   );
 }
 
