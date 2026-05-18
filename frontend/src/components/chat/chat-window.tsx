@@ -426,7 +426,7 @@ export function ChatWindow({
         </div>
 
         {/* Composer */}
-        <motion className="border-t border-border p-3 sm:p-4">
+        <div className="border-t border-border p-3 sm:p-4">
           {attachments.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-2">
               {attachments.map((a) => (
