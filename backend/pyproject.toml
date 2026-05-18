@@ -13,6 +13,9 @@ dependencies = [
     # `fastapi run` commands work, plus `uvicorn[standard]`, `python-multipart`,
     # `email-validator`, and `httpx`.
     "fastapi[standard]==0.115.5",
+    # FastAPI 0.115.x requires starlette<0.42. Do not allow 1.x — APIRouter passes
+    # on_startup/on_shutdown which Starlette 1 removed from Router (TypeError at import).
+    "starlette>=0.40.0,<0.42.0",
     "slowapi==0.1.9",
 
     # --- Validation / settings ---
