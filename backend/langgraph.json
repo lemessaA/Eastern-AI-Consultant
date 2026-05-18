@@ -1,0 +1,7 @@
+{
+    "dependencies": ["."],
+    "graphs": {
+      "business_analysis": "./app/langgraph/business_analysis.py:_build_graph"
+    },
+    "env": ".env"
+  }
