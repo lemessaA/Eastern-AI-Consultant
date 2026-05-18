@@ -89,6 +89,17 @@ export default function SignupPage() {
         </Button>
       </form>
 
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-background px-2 text-muted-foreground">{t("auth.orContinueWith")}</span>
+        </div>
+      </div>
+
+      <GoogleSignInButton />
+
       <p className="text-center text-sm text-muted-foreground">
         {t("auth.haveAccount")}{" "}
         <Link href="/auth/login" className="text-primary hover:underline">
