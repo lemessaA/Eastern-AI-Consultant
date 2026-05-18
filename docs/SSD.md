@@ -96,7 +96,7 @@ flowchart LR
 | `backend/` | FastAPI app, Alembic, Celery, Dockerfile |
 | `infra/nginx/` | Reverse proxy configuration for combined hosting |
 | `docker-compose.yml` | Postgres (pgvector image), Redis, API, worker, web, nginx |
-| `docs/` | Deployment guides (`vercel.md`, `render-vercel.md`) and this SSD |
+| `docs/` | Specs ([SOFTWARE-SPECIFICATIONS.md](./SOFTWARE-SPECIFICATIONS.md)), SRS, SSD, deployment (`vercel.md`, `render-vercel.md`) |
 
 ### 4.3 Frontend route map (App Router)
 
