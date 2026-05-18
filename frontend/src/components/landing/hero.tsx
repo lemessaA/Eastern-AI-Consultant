@@ -129,7 +129,7 @@ function HeroPreview() {
   return (
     <div className="relative rounded-2xl border border-border bg-card/80 p-2 shadow-2xl shadow-primary/10 backdrop-blur-xl">
       <div className="rounded-xl bg-background/80 p-4 sm:p-6">
-        <motion className="flex items-center justify-between border-b border-border pb-3">
+        <div className="flex items-center justify-between border-b border-border pb-3">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-destructive/70" />
             <span className="h-3 w-3 rounded-full bg-warning/70" />
