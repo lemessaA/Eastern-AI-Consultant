@@ -11,7 +11,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_list_agents_public(client: AsyncClient):
-    res = await client.get("/api/v1/agents")
+    res = await client.get("/api/v1/chat/agents")
     assert res.status_code == 200
     agents = res.json()
     assert len(agents) >= 10
@@ -29,7 +29,7 @@ async def test_stream_requires_auth(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_upload_requires_auth(client: AsyncClient):
-  res = await client.post(
+    res = await client.post(
       "/api/v1/chat/upload",
       files={"file": ("note.txt", b"Sample document text for chat.", "text/plain")},
   )

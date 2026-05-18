@@ -34,7 +34,7 @@ def main() -> None:
         ok("health")
 
         # Agents (public)
-        r = client.get(f"{BASE}/api/v1/agents")
+        r = client.get(f"{BASE}/api/v1/chat/agents")
         if r.status_code != 200 or len(r.json()) < 1:
             fail(f"agents: {r.status_code}")
         ok(f"agents ({len(r.json())} specialists)")
