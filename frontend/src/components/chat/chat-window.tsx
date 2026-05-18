@@ -183,6 +183,7 @@ export function ChatWindow({
     };
     setMessages((prev) => [...prev, userMsg, assistantMsg]);
     setInput("");
+    setAttachments([]);
     setStreaming(true);
 
     const controller = new AbortController();
@@ -201,6 +202,7 @@ export function ChatWindow({
           message,
           agent_type: agent,
           language: locale,
+          attachments: pendingAttachments,
         }),
         signal: controller.signal,
       });
@@ -284,6 +286,7 @@ export function ChatWindow({
   function newChat() {
     setMessages([]);
     setConversationId(null);
+    setAttachments([]);
   }
 
   const suggestions = [
