@@ -211,25 +211,78 @@ async def verify_email(token: str, db: DB) -> MessageResponse:
     return MessageResponse(message="Email verified.")
 
 
-@router.post("/google", response_model=TokenResponse)
-async def google_auth(payload: GoogleAuthRequest, db: DB) -> TokenResponse:
-    """Verify a Google ID token and sign the user in (creating them if needed)."""
+def _google_email_verified(data: dict) -> bool:
+    value = data.get("email_verified")
+    return value is True or str(value).lower() == "true"
+
+
+async def _verify_google_id_token(id_token: str) -> dict:
+    """Validate a Google ID token (GIS / One Tap credential JWT)."""
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(
             "https://oauth2.googleapis.com/tokeninfo",
-            params={"id_token": payload.id_token},
+            params={"id_token": id_token},
         )
     if resp.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid Google token.")
     data = resp.json()
     if settings.GOOGLE_CLIENT_ID and data.get("aud") != settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=401, detail="Google audience mismatch.")
+    if not _google_email_verified(data):
+        raise HTTPException(status_code=401, detail="Google email is not verified.")
+    return data
 
+
+async def _ensure_google_oauth_link(db, user: User, google_sub: str) -> None:
+    """Attach a Google OAuth row when an existing email/password user signs in with Google."""
+    if not google_sub:
+        return
+    linked = (
+        await db.execute(
+            select(OAuthAccount).where(
+                OAuthAccount.user_id == user.id,
+                OAuthAccount.provider == "google",
+            )
+        )
+    ).scalar_one_or_none()
+    if linked is None:
+        db.add(
+            OAuthAccount(
+                user_id=user.id,
+                provider="google",
+                provider_account_id=google_sub,
+            )
+        )
+    elif linked.provider_account_id != google_sub:
+        raise HTTPException(
+            status_code=409,
+            detail="This email is linked to a different Google account.",
+        )
+
+
+@router.get("/google/status")
+async def google_auth_status() -> dict[str, bool]:
+    """Whether the API is configured to validate Google ID tokens."""
+    return {"enabled": bool(settings.GOOGLE_CLIENT_ID)}
+
+
+@router.post("/google", response_model=TokenResponse)
+async def google_auth(payload: GoogleAuthRequest, db: DB) -> TokenResponse:
+    """Verify a Google ID token and sign the user in (creating them if needed)."""
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=503,
+            detail="Google sign-in is not configured on the server (GOOGLE_CLIENT_ID).",
+        )
+
+    data = await _verify_google_id_token(payload.id_token)
     email = (data.get("email") or "").lower()
     if not email:
         raise HTTPException(status_code=400, detail="Google token missing email.")
 
+    google_sub = data.get("sub") or ""
     user = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
+
     if not user:
         user = User(
             email=email,
@@ -246,10 +299,20 @@ async def google_auth(payload: GoogleAuthRequest, db: DB) -> TokenResponse:
             OAuthAccount(
                 user_id=user.id,
                 provider="google",
-                provider_account_id=data.get("sub", ""),
+                provider_account_id=google_sub,
             )
         )
-    elif not user.is_verified:
+    else:
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Account disabled.")
+        await _ensure_google_oauth_link(db, user, google_sub)
+        if data.get("picture") and not user.avatar_url:
+            user.avatar_url = data.get("picture")
+        if data.get("name") and user.full_name == email.split("@")[0]:
+            user.full_name = data.get("name") or user.full_name
         user.is_verified = True
+        if payload.preferred_language:
+            user.preferred_language = payload.preferred_language
+
     await db.flush()
     return await _build_token_response(user, db)
