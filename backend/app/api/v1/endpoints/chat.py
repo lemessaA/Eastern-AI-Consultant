@@ -125,9 +125,11 @@ async def get_conversation(
             .order_by(Message.created_at)
         )
     ).scalars().all()
-    out = ConversationDetailRead.model_validate(convo)
-    out.messages = [MessageRead.model_validate(m) for m in msg_rows]
-    return out
+    base = ConversationRead.model_validate(convo)
+    return ConversationDetailRead(
+        **base.model_dump(),
+        messages=[MessageRead.model_validate(m) for m in msg_rows],
+    )
 
 
 @router.delete("/conversations/{conversation_id}", response_model=MessageResponse)
