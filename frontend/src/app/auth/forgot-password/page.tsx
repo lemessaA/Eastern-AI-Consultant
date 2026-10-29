@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Loader2, Mail, CheckCircle2, AlertCircle, RotateCcw, Lock, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
