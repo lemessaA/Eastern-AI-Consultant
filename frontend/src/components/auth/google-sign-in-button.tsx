@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { isGoogleAuthConfigured } from "@/components/auth/google-auth-provider";
@@ -12,6 +12,8 @@ import { useTranslation } from "@/hooks/use-translation";
 import { api, APIError } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import type { TokenResponse } from "@/types";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface GoogleSignInButtonProps {
   redirectTo?: string;
@@ -23,13 +25,15 @@ export function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
   const params = useSearchParams();
   const setSession = useAuthStore((s) => s.setSession);
   const [loading, setLoading] = React.useState(false);
+  const [fallbackLoading, setFallbackLoading] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [buttonWidth, setButtonWidth] = React.useState(360);
+  const [showFallback, setShowFallback] = React.useState(false);
 
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const update = () => setButtonWidth(Math.max(240, Math.floor(el.offsetWidth)));
+    const update = () => setButtonWidth(Math.max(280, Math.floor(el.offsetWidth)));
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -67,23 +71,77 @@ export function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
     }
   }
 
+  async function handleFallbackClick() {
+    if (!isGoogleAuthConfigured()) {
+      toast.info("Google Sign-In requires configuration. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your environment variables.");
+      return;
+    }
+    setFallbackLoading(true);
+    setShowFallback(true);
+  }
+
   if (!isGoogleAuthConfigured()) {
     return (
-      <Button variant="outline" size="lg" className="w-full" disabled title="Set NEXT_PUBLIC_GOOGLE_CLIENT_ID">
-        <GoogleIcon />
-        {t("auth.google")}
-      </Button>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <Button
+          variant="outline"
+          size="lg"
+          className={cn(
+            "w-full gap-3",
+            "border-border/60 hover:border-primary/50",
+            "bg-gradient-to-br from-background to-muted/50",
+            "hover:shadow-lg hover:shadow-primary/10",
+            "transition-all duration-300",
+            "disabled:opacity-50"
+          )}
+          onClick={handleFallbackClick}
+          disabled={fallbackLoading}
+          whileHover={{ scale: fallbackLoading ? 1 : 1.01 }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <GoogleIcon className="h-5 w-5 flex-shrink-0" />
+          <span className="flex-1 text-left font-medium">
+            {t("auth.google")}
+          </span>
+          {fallbackLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
+          ) : (
+            <CheckCircle2 className="h-5 w-5 text-muted-foreground/50" aria-hidden />
+          )}
+        </Button>
+        <motion.p
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="mt-2 text-xs text-muted-foreground/60 text-center"
+        >
+          {t("auth.googleNotConfigured") || "Configure GOOGLE_CLIENT_ID to enable"}
+        </motion.p>
+      </motion.div>
     );
   }
 
   return (
-    <div ref={containerRef} className="relative w-full min-h-[44px]">
+    <motion.div
+      ref={containerRef}
+      className="relative w-full min-h-[48px]"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       {loading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/80">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/80 backdrop-blur-sm"
+        >
+          <Loader2 className="h-6 w-6 animate-spin text-primary" aria-hidden />
+        </motion.div>
       )}
-      <div className={loading ? "pointer-events-none opacity-60" : ""}>
+      <div className={cn(loading ? "pointer-events-none opacity-60" : "")}>
         <GoogleLogin
           onSuccess={handleCredential}
           onError={() => toast.error("Google sign-in was cancelled or failed.")}
@@ -96,13 +154,28 @@ export function GoogleSignInButton({ redirectTo }: GoogleSignInButtonProps) {
           locale={locale === "am" ? "am" : locale === "om" ? "om" : locale === "so" ? "so" : "en"}
         />
       </div>
-    </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+        className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground/60"
+      >
+        <div className="flex items-center gap-1 h-4">
+          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-400" />
+          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-green-500 to-green-400" />
+          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-400" />
+          <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-red-400" />
+        </div>
+        <span>{t("auth.secureSignIn") || "Secure sign-in with Google"}</span>
+      </motion.div>
+    </motion.div>
   );
 }
 
 function GoogleIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden>
+    <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
       <path
         fill="#4285f4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
