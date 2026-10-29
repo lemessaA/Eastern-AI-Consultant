@@ -7,6 +7,7 @@ import { Globe2, Sparkles, Users, Zap, Award, Shield, Brain, BarChart3 } from "l
 import { Logo } from "@/components/logo";
 import { marketingImages } from "@/lib/marketing-images";
 import { useTranslation } from "@/hooks/use-translation";
+import { cn } from "@/lib/utils";
 
 const stats = [
   { value: "12.8k+", label: "Learners", icon: Users, color: "from-violet-500 to-fuchsia-500" },
