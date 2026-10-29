@@ -66,7 +66,7 @@ def create_refresh_token(subject: str | int) -> str:
 def decode_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT. Raises :class:`jose.JWTError` on failure."""
     try:
-        return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        return jwt.decode(token, settings.jwt_verification_key, algorithms=[settings.JWT_ALGORITHM])
     except JWTError as exc:
         raise JWTError(f"Invalid token: {exc}") from exc
 
