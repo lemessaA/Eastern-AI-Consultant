@@ -63,7 +63,7 @@ export function LandingNavbar() {
               whileHover={{ scale: 1.05, rotate: [0, -2, 2, 0] }}
               transition={{ duration: 0.4 }}
             >
-              <Logo />
+              <Logo href="/" />
             </motion.div>
 
             <div className="hidden lg:flex items-center gap-1">

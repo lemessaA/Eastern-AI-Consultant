@@ -5,25 +5,21 @@ import { cn } from "@/lib/utils";
 
 export function Logo({
   className,
-  href = "/",
+  href,
   showText = true,
   /** When true, tagline stays visible on narrow widths (drawers / compact headers). */
   responsiveBrand = false,
   onClick,
 }: {
   className?: string;
+  /** If provided, renders as a Link. If undefined, renders as plain elements (for use inside other Links). */
   href?: string;
   showText?: boolean;
   responsiveBrand?: boolean;
   onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={cn("inline-flex items-center gap-2 group", className)}
-      aria-label="Eastern AI Consultant"
-    >
+  const content = (
+    <>
       <span className="relative inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-plum to-accent shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
         <span className="text-white font-display font-bold text-sm">EA</span>
         <span className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-white/20" />
@@ -44,6 +40,29 @@ export function Logo({
           </span>
         </span>
       )}
-    </Link>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        onClick={onClick}
+        className={cn("inline-flex items-center gap-2 group", className)}
+        aria-label="Eastern AI Consultant"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      className={cn("inline-flex items-center gap-2 group", className)}
+      onClick={onClick}
+      aria-label="Eastern AI Consultant"
+    >
+      {content}
+    </div>
   );
 }
