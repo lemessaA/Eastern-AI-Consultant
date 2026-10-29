@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { Loader2, Mail, Lock, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
