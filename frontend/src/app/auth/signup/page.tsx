@@ -4,6 +4,7 @@ import * as React from "react";
 import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Loader2, Mail, Lock, User, Globe, AlertCircle, CheckCircle2, Shield, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 
