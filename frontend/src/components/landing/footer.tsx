@@ -119,7 +119,7 @@ export function Footer() {
             transition={{ delay: 0.1, duration: 0.5 }}
             className="space-y-6"
           >
-            <Logo className="w-auto" />
+            <Logo href="/" className="w-auto" />
             <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
               {t("footer.tagline") || "Empowering Africa's next generation of AI builders, entrepreneurs, and innovators."}
             </p>
