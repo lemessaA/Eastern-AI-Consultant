@@ -132,6 +132,7 @@ export function AuthVisualPanel() {
           transition={{ delay: 0.1, duration: 0.6 }}
         >
           <Logo
+            href="/"
             showText
             responsiveBrand
             className="text-white drop-shadow-sm [&_span]:text-white [&_.text-muted-foreground]:text-white/60"
